@@ -1,0 +1,14 @@
+Django==3.2
+djangorestframework==3.12.4
+psycopg2-binary
+weasyprint
+numpy
+opencv-python
+PyPDF2
+PyMuPDF
+pdfplumber
+python-docx
+pandas
+openpyxl
+openai
+python-dotenv

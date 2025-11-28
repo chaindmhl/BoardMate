@@ -1,0 +1,192 @@
+<!-- templates/practice_take.html -->
+{% load static %}
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Practice Exam - {{ board_exam }}</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    .question-card { max-width: 900px; margin: 24px auto; }
+    .choices label { display:block; padding:8px; border-radius:6px; cursor:pointer; }
+    .choices input { margin-right:10px; }
+    .timer { font-weight:700; font-size:1.05rem; }
+    .hidden { display:none; }
+  </style>
+</head>
+<body class="bg-light">
+<div class="container">
+  <div class="question-card card mt-4 p-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <div>
+        <h4 class="mb-0">Practice: {{ board_exam }}</h4>
+        <small class="text-muted">Question <span id="qIndex">1</span> / {{ total_items }}</small>
+      </div>
+      <div class="text-end">
+        <div class="timer">Total: <span id="totalTimer">00:00</span></div>
+        <div class="timer text-sm">Question: <span id="questionTimer">00:00</span></div>
+      </div>
+    </div>
+
+    <form id="practiceForm" method="post" action="{% url 'practice_submit' session_id=session_id %}">
+      {% csrf_token %}
+      <input type="hidden" name="session_id" value="{{ session_id }}">
+
+      <div id="questionsContainer">
+        {% for q in questions %}
+        <div class="question-block" data-index="{{ forloop.counter0 }}" data-instance="{{ q.instance_id }}">
+          <div class="mb-3">
+            <h5>{{ forloop.counter }}. {{ q.text }}</h5>
+            {% if q.image_url %}
+              <img src="{{ q.image_url }}" alt="figure" style="max-width:280px" class="mb-2"/>
+            {% endif %}
+          </div>
+
+          <div class="choices mb-3">
+            {% for c in q.choices %}
+              <label class="choice">
+                <input type="radio" name="answer_{{ q.instance_id }}" value="{{ c.text }}">
+                {{ c.display_letter }}. {{ c.text }}
+              </label>
+            {% endfor %}
+          </div>
+
+          <!-- hidden fields for time per question -->
+          <input type="hidden" name="time_{{ q.instance_id }}" id="time_{{ q.instance_id }}" value="0" />
+        </div>
+        {% endfor %}
+      </div>
+
+      <div class="d-flex justify-content-between mt-3">
+        <div>
+          <button type="button" id="prevBtn" class="btn btn-outline-secondary" disabled>Previous</button>
+          <button type="button" id="nextBtn" class="btn btn-outline-secondary">Next</button>
+        </div>
+        <div>
+          <button type="submit" class="btn btn-success">Submit Practice</button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+  // Basic per-question and overall timer + navigation
+  const totalItems = Number("{{ total_items|default:0 }}");
+  const questionBlocks = document.querySelectorAll('.question-block');
+  let current = 0;
+  const qIndexSpan = document.getElementById('qIndex');
+
+  // timers
+  let totalSeconds = 0;
+  let questionSeconds = 0;
+  let totalTimerEl = document.getElementById('totalTimer');
+  let questionTimerEl = document.getElementById('questionTimer');
+
+  // create per-question timers store
+  const perQuestionTimes = new Array(totalItems).fill(0);
+
+  // show only the first question
+  function showQuestion(idx) {
+    questionBlocks.forEach((el, i) => {
+      el.style.display = (i === idx) ? 'block' : 'none';
+    });
+    current = idx;
+    qIndexSpan.textContent = idx + 1;
+    questionSeconds = perQuestionTimes[idx] || 0;
+    updateQuestionTimerDisplay();
+    // prev/next button states
+    document.getElementById('prevBtn').disabled = (idx === 0);
+    document.getElementById('nextBtn').disabled = (idx >= totalItems - 1);
+  }
+
+  function updateTotalTimerDisplay() {
+    const mm = String(Math.floor(totalSeconds / 60)).padStart(2,'0');
+    const ss = String(totalSeconds % 60).padStart(2,'0');
+    totalTimerEl.textContent = `${mm}:${ss}`;
+  }
+  function updateQuestionTimerDisplay() {
+    const mm = String(Math.floor(questionSeconds / 60)).padStart(2,'0');
+    const ss = String(Math.floor(questionSeconds % 60)).padStart(2,'0');
+    questionTimerEl.textContent = `${mm}:${ss}`;
+  }
+
+  // ticking every second
+  setInterval(() => {
+    totalSeconds += 1;
+    questionSeconds += 1;
+    updateTotalTimerDisplay();
+    updateQuestionTimerDisplay();
+  }, 1000);
+
+  // when navigating away from a question, save its time
+  function saveCurrentQuestionTime() {
+    perQuestionTimes[current] = questionSeconds;
+    // also write to hidden input associated with the instance id
+    const instance = questionBlocks[current].getAttribute('data-instance');
+    const input = document.getElementById('time_' + instance);
+    if (input) input.value = perQuestionTimes[current];
+  }
+
+  document.getElementById('nextBtn').addEventListener('click', () => {
+    saveCurrentQuestionTime();
+    if (current < totalItems - 1) {
+      showQuestion(current + 1);
+    }
+  });
+  document.getElementById('prevBtn').addEventListener('click', () => {
+    saveCurrentQuestionTime();
+    if (current > 0) {
+      showQuestion(current - 1);
+    }
+  });
+
+  // on submit - save current question time too
+  document.getElementById('practiceForm').addEventListener('submit', function(e) {
+    saveCurrentQuestionTime();
+    // additionally set all time inputs (in case user didn't visit some)
+    questionBlocks.forEach((block, idx) => {
+      const instance = block.getAttribute('data-instance');
+      const input = document.getElementById('time_' + instance);
+      if (input && (!input.value || input.value === "0")) {
+        input.value = perQuestionTimes[idx] || 0;
+      }
+    });
+  });
+
+  // initialize
+  showQuestion(0);
+
+  // Prevent submit if not all questions answered
+  document.getElementById('practiceForm').addEventListener('submit', function(e) {
+      const unanswered = [];
+
+      questionBlocks.forEach((block, idx) => {
+          const instance = block.getAttribute('data-instance');
+          const name = "answer_" + instance;
+          const radios = document.getElementsByName(name);
+          let oneChecked = false;
+
+          radios.forEach(r => {
+              if (r.checked) oneChecked = true;
+          });
+
+          if (!oneChecked) {
+              unanswered.push(idx + 1); // question number
+          }
+      });
+
+      if (unanswered.length > 0) {
+          e.preventDefault();
+          alert(
+              "You must answer ALL questions before submitting.\n" +
+              "Unanswered items: " + unanswered.join(", ")
+          );
+          return false;
+      }
+  });
+
+</script>
+
+</body>
+</html>

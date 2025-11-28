@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Login | BoardMate</title>
+  {% load static %}
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <style>
+    body {
+      font-family: "Poppins", Arial, sans-serif;
+      background: linear-gradient(135deg, #eef2ff, #f4f6f8);
+      color: #333;
+      margin: 0;
+      padding: 0;
+    }
+
+    /* Navbar */
+    .navbar {
+      background-color: #1f2937;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      padding: 0.3rem 1rem; /* slimmer navbar */
+    }
+
+    .navbar-brand {
+      font-weight: 700;
+      font-size: 1.2rem;
+      color: #ffffff !important;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .navbar-brand img {
+      height: 26px;
+      width: auto;
+    }
+
+    /* Center Section */
+    .main-section {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 90vh;
+      padding: 20px;
+    }
+
+  /* Login Box */
+  .login-container {
+    width: 100%;
+    max-width: 400px;
+    background-color: #fff;
+    padding: 18px 20px; /* reduced from 30px 28px */
+    border-radius: 12px;
+    box-shadow: 0 4px 18px rgba(0, 0, 0, 0.08);
+    animation: fadeIn 0.6s ease;
+    text-align: center;
+    margin-top: 1px; /* optional: small top margin */
+  }
+
+  /* Logo */
+  .login-container img {
+    max-width: 220px; /* make the logo slightly bigger */
+    margin-bottom: 1px; /* adds a little breathing space */
+    filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.15));
+    animation: glow 2.5s infinite ease-in-out;
+  }
+
+
+    @keyframes glow {
+      0% { filter: drop-shadow(0 0 0px rgba(37, 99, 235, 0.4)); }
+      50% { filter: drop-shadow(0 0 10px rgba(37, 99, 235, 0.7)); }
+      100% { filter: drop-shadow(0 0 0px rgba(37, 99, 235, 0.4)); }
+    }
+
+    label {
+      font-weight: 500;
+      color: #374151;
+      margin-bottom: 6px;
+      display: block;
+      text-align: left;
+      font-size: 14px;
+    }
+
+    input[type="email"],
+    input[type="password"] {
+      width: 100%;
+      padding: 9px 11px;
+      border: 1px solid #d1d5db;
+      border-radius: 6px;
+      margin-bottom: 14px;
+      transition: border-color 0.3s ease;
+      font-size: 14px;
+    }
+
+    input[type="email"]:focus,
+    input[type="password"]:focus {
+      border-color: #2563eb;
+      outline: none;
+      box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2);
+    }
+
+    button[type="submit"] {
+      width: 100%;
+      padding: 10px;
+      background-color: #2563eb;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 15px;
+      font-weight: 500;
+      transition: background-color 0.3s ease, transform 0.2s ease;
+    }
+
+    button[type="submit"]:hover {
+      background-color: #1d4ed8;
+      transform: scale(1.02);
+    }
+
+    .signup-button {
+      width: 100%;
+      padding: 10px;
+      background-color: #10b981;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 15px;
+      font-weight: 500;
+      margin-top: 8px;
+      transition: background-color 0.3s ease, transform 0.2s ease;
+    }
+
+    .signup-button:hover {
+      background-color: #059669;
+      transform: scale(1.02);
+    }
+
+    /* Message Popup */
+    .message {
+      display: none;
+      position: fixed;
+      top: 10%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background-color: #f44336;
+      color: white;
+      padding: 12px 20px;
+      border-radius: 6px;
+      z-index: 9999;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Navbar -->
+  <nav class="navbar navbar-expand-lg navbar-dark">
+    <div class="container">
+      <a class="navbar-brand">
+        <img src="{% static 'boardmate1.png' %}" alt="BoardMate Logo">
+        BoardMate
+      </a>
+    </div>
+  </nav>
+
+  <!-- Main Section -->
+  <section class="main-section">
+    <div class="login-container">
+      <img src="{% static 'boardmate1.png' %}" alt="BoardMate Logo">
+
+      <form method="post" autocomplete="off">
+        {% csrf_token %}
+        <label for="id_username">Email</label>
+        <input type="email" id="id_username" name="username" required>
+
+        <label for="id_password">Password</label>
+        <input type="password" id="id_password" name="password" required>
+
+        <button type="submit">Login</button>
+      </form>
+
+      <button class="signup-button" onclick="redirectToSignup()">Create an Account</button>
+    </div>
+  </section>
+
+  {% if messages %}
+    <ul>
+      {% for message in messages %}
+        <li class="message">{{ message }}</li>
+      {% endfor %}
+    </ul>
+  {% endif %}
+
+  <script>
+    function redirectToSignup() {
+      window.location.href = "{% url 'signup' %}";
+    }
+
+    window.onload = function() {
+      var messages = document.getElementsByClassName('message');
+      for (var i = 0; i < messages.length; i++) {
+        messages[i].style.display = 'block';
+        (function(index) {
+          setTimeout(function() {
+            messages[index].style.display = 'none';
+          }, 2000);
+        })(i);
+      }
+    };
+  </script>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script type="module">
+    // Import the functions you need from the SDKs you need
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-app.js";
+    import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-analytics.js";
+    // TODO: Add SDKs for Firebase products that you want to use
+    // https://firebase.google.com/docs/web/setup#available-libraries
+  
+    // Your web app's Firebase configuration
+    // For Firebase JS SDK v7.20.0 and later, measurementId is optional
+    const firebaseConfig = {
+      apiKey: "AIzaSyBHMm_go23g6OYbnZxH_L23-C3tgVs04-c",
+      authDomain: "boardmate-c162e.firebaseapp.com",
+      projectId: "boardmate-c162e",
+      storageBucket: "boardmate-c162e.firebasestorage.app",
+      messagingSenderId: "94218560547",
+      appId: "1:94218560547:web:ce6e53eaf32ba6769cfd96",
+      measurementId: "G-50PRDEWGZX"
+    };
+  
+    // Initialize Firebase
+    const app = initializeApp(firebaseConfig);
+    const analytics = getAnalytics(app);
+  </script>
+</body>
+</html>

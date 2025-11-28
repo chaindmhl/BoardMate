@@ -1,0 +1,251 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Practice Analytics Dashboard</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    /* Body & typography */
+    body {
+      font-family: "Poppins", Arial, sans-serif;
+      background-color: #f4f6f8;
+      color: #333;
+    }
+
+    h1, h2 {
+      color: #1f2937;
+      text-align: center;
+      margin-top: 20px;
+      font-weight: 600;
+    }
+
+    h2 {
+        color: #51555a;
+        text-align: center;
+        margin-top: 80px; /* Increase spacing */
+        font-weight: 600;
+        }
+
+    /* Navbar styling */
+    .navbar {
+      background-color: #1f2937;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      padding-top: 6px !important;
+      padding-bottom: 6px !important;
+    }
+
+    .navbar-brand {
+      font-weight: 600;
+      color: #fff !important;
+      font-size: 1.1rem;
+      transition: transform 0.2s, color 0.2s;
+    }
+
+    .navbar-brand:hover {
+      color: #10b981 !important; 
+      transform: scale(1.05);
+    }
+
+    .nav-link {
+      color: #fff !important;
+      transition: color 0.2s, transform 0.2s;
+      margin-left: 15px;
+    }
+
+    .nav-link:hover {
+      color: #10b981 !important;
+      transform: scale(1.05);
+    }
+
+    /* Chart container */
+    .chart-container {
+      width: 80%;
+      margin: 30px auto;
+    }
+
+    /* AI suggestion card */
+    .ai-suggestion-card {
+      background-color: #f9f9f9;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      padding: 20px;
+      margin: 20px auto;
+      max-width: 800px;
+    }
+
+  </style>
+</head>
+<body>
+
+  <!-- Navbar -->
+  <nav class="navbar navbar-expand-lg navbar-dark">
+    <div class="container">
+      <a class="navbar-brand" href="{% url 'home_student' %}">BoardMate</a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
+        <ul class="navbar-nav ms-3">
+          <li class="nav-item">
+            <a class="nav-link" href="{% url 'logout' %}">Logout</a>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </nav>
+
+  <h1>📊 Your Practice Analytics</h1>
+
+  <!-- Pass QuerySet data as JSON safely -->
+  {{ subject_analytics|json_script:"subjectData" }}
+  {{ topic_analytics|json_script:"topicData" }}
+  {{ difficulty_analytics|json_script:"difficultyData" }}
+
+  <h2>Per Subject</h2>
+  <div class="chart-container">
+    <canvas id="subjectChart"></canvas>
+  </div>
+
+  <h2>Per Topic</h2>
+  <div class="chart-container">
+    <canvas id="topicChart"></canvas>
+  </div>
+
+  <h2>Per Difficulty Level</h2>
+  <div class="chart-container">
+    <canvas id="difficultyChart"></canvas>
+  </div>
+
+  <h2>🤖 AI Study Suggestions</h2>
+  <div class="ai-suggestion-card">
+    <p>{{ ai_suggestions }}</p>
+  </div>
+
+  <!-- Chart.js Script -->
+  <script>
+    const subjectAnalytics = JSON.parse('{{ subject_analytics|safe }}');
+    const topicAnalytics = JSON.parse('{{ topic_analytics|safe }}');
+    const difficultyAnalytics = JSON.parse('{{ difficulty_analytics|safe }}');
+
+    const calcAccuracy = (obj) => obj.total_items_answered ? ((obj.total_correct / obj.total_items_answered) * 100).toFixed(2) : 0;
+
+    // Subject Chart
+    const subjectLabels = subjectAnalytics.map(s => s.subject);
+    const subjectAccuracy = subjectAnalytics.map(calcAccuracy);
+
+    new Chart(document.getElementById('subjectChart'), {
+        type: 'bar',
+        data: {
+            labels: subjectLabels,
+            datasets: [{
+            label: 'Accuracy %',
+            data: subjectAccuracy,
+            backgroundColor: 'rgba(54, 162, 235, 0.7)'
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: { y: { beginAtZero: true, max: 100 } },
+            plugins: {
+            tooltip: {
+                callbacks: {
+                label: function(context) {
+                    const s = subjectAnalytics[context.dataIndex];
+                    return [
+                    `Accuracy: ${calcAccuracy(s)}%`,
+                    `Total Items Answered: ${s.total_items_answered}`,
+                    `Total Correct: ${s.total_correct}`,
+                    `Total Attempts: ${s.total_attempts}`,
+                    `Avg Time (sec): ${s.average_time_per_item.toFixed(2)}`,
+                    `Last Practice: ${new Date(s.last_practice_date).toLocaleString()}`
+                    ];
+                }
+                }
+            },
+            legend: { display: false }
+            }
+        }
+        });
+
+
+    // Topic Chart
+    const topicLabels = topicAnalytics.map(t => `${t.subject} - ${t.topic}`);
+    const topicAccuracy = topicAnalytics.map(calcAccuracy);
+
+    new Chart(document.getElementById('topicChart'), {  // ✅ correct canvas
+        type: 'bar',
+        data: {
+            labels: topicLabels,
+            datasets: [{
+                label: 'Accuracy %',
+                data: topicAccuracy,
+                backgroundColor: 'rgba(255, 99, 132, 0.7)'
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: { y: { beginAtZero: true, max: 100 } },
+            plugins: {
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const t = topicAnalytics[context.dataIndex];
+                            return [
+                                `Accuracy: ${calcAccuracy(t)}%`,
+                                `Total Items Answered: ${t.total_items_answered}`,
+                                `Total Correct: ${t.total_correct}`,
+                                `Avg Time (sec): ${t.average_time_per_item.toFixed(2)}`,
+                                `Last Practice: ${new Date(t.last_practice_date).toLocaleString()}`
+                            ];
+                        }
+                    }
+                },
+                legend: { display: false }
+            }
+        }
+    });
+
+
+    // Difficulty Chart
+    const difficultyLabels = difficultyAnalytics.map(d => d.difficulty);
+    const difficultyAccuracy = difficultyAnalytics.map(calcAccuracy);
+
+    new Chart(document.getElementById('difficultyChart'), {  // ✅ correct canvas
+        type: 'bar',
+        data: {
+            labels: difficultyLabels,
+            datasets: [{
+                label: 'Accuracy %',
+                data: difficultyAccuracy,
+                backgroundColor: 'rgba(75, 192, 192, 0.7)'
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: { y: { beginAtZero: true, max: 100 } },
+            plugins: {
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const d = difficultyAnalytics[context.dataIndex];
+                            return [
+                                `Accuracy: ${calcAccuracy(d)}%`,
+                                `Total Items Answered: ${d.total_items_answered}`,
+                                `Total Correct: ${d.total_correct}`,
+                                `Last Practice: ${new Date(d.last_practice_date).toLocaleString()}`
+                            ];
+                        }
+                    }
+                },
+                legend: { display: false }
+            }
+        }
+    });
+
+  </script>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

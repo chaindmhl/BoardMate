@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Exam Result</title>
+</head>
+<body>
+    <h1>Exam Result</h1>
+    <p><strong>Subject:</strong> {{ result.subject }}</p>
+    <p><strong>Score:</strong> {{ result.score }}</p>
+    <h2>Submitted Answers</h2>
+    <ul>
+        {% for answer in result.answer %}
+        <li>{{ answer }}</li>
+        {% endfor %}
+    </ul>
+    <h2>Correct Answers</h2>
+    <ul>
+        {% for answer in result.correct_answer %}
+        <li>{{ answer }}</li>
+        {% endfor %}
+    </ul>
+    <!-- Add more details if needed -->
+</body>
+</html>

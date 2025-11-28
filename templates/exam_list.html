@@ -1,0 +1,34 @@
+<!-- exam_list.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Exam List</title>
+</head>
+<body>
+    <h1>Exam List</h1>
+    <table border="1">
+        <thead>
+            <tr>
+                <th>Subject</th>
+                <th>Questions</th>
+                <th>Choices</th>
+                <th>Set A Answers</th>
+                <th>Set B Answers</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for exam in exams %}
+            <tr>
+                <td>{{ exam.Subject }}</td>
+                <td>{{ exam.Questions }}</td>
+                <td>{{ exam.Choices }}</td>
+                <td>{{ exam.Set_A_answers }}</td>
+                <td>{{ exam.Set_B_answers }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</body>
+</html>

@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Answer Test Form</title>
+</head>
+<body>
+    <h1>Answer Test Online</h1>
+    
+    <form method="post">
+        {% csrf_token %}
+        <div>
+            {% for question in questions %}
+            <p>{{ question.question_text }}</p>
+            <label for="question{{ question.id }}_choiceA">A</label>
+            <input type="radio" id="question{{ question.id }}_choiceA" name="question{{ question.id }}" value="A">
+            <label for="question{{ question.id }}_choiceB">B</label>
+            <input type="radio" id="question{{ question.id }}_choiceB" name="question{{ question.id }}" value="B">
+            <label for="question{{ question.id }}_choiceC">C</label>
+            <input type="radio" id="question{{ question.id }}_choiceC" name="question{{ question.id }}" value="C">
+            <label for="question{{ question.id }}_choiceD">D</label>
+            <input type="radio" id="question{{ question.id }}_choiceD" name="question{{ question.id }}" value="D">
+            <label for="question{{ question.id }}_choiceE">E</label>
+            <input type="radio" id="question{{ question.id }}_choiceE" name="question{{ question.id }}" value="E">
+            {% endfor %}
+        </div>
+        <button type="submit">Submit Answers</button>
+    </form>
+</body>
+</html>

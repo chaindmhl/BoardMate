@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Generated Test</title>
+{% load static %}
+<style>
+    /* Page setup for WeasyPrint */
+    @page {
+        size: A4;
+        margin: 10mm; /* reduce top, bottom, left, right margins */
+    }
+
+    body {
+        font-family: "Poppins", Arial, sans-serif;
+        margin: 0; /* Let @page handle margins */
+        line-height: 1.5;
+        color: #333;
+        background-color: #ffffff;
+    }
+
+    /* Header */
+    header {
+        display: flex;
+        align-items: center;
+        margin-bottom: 10px;
+        border-bottom: 2px solid #000;
+        padding-bottom: 5px;
+    }
+
+    .logo-container {
+        display: flex;
+        gap: 10px;      /* space between logos */
+        flex-shrink: 0; /* prevent logos from shrinking */
+    }
+
+    .logo-container img.logo {
+        width: 60px;    /* adjust size */
+        height: auto;
+    }
+
+    .header-text {
+        flex: 1;
+        text-align: center;
+    }
+
+
+    .header-text h1 {
+        margin: 0;
+        font-size: 24px;
+        font-weight: 700;
+    }
+
+    .header-text h2 {
+        margin: 2px 0;
+        font-size: 14px;
+        font-weight: 500;
+    }
+
+    /* Test info */
+    h3 {
+        font-size: 1.1em; 
+        color: #1f2937;
+        margin: 10px 0 5px 0;
+        font-weight: 600;
+    }
+
+    /* Questions list */
+    ol {
+        margin: 0;
+        padding-left: 20px;
+    }
+
+    ul {
+        list-style-type: none;
+        padding-left: 20px;
+        margin: 5px 0;
+    }
+
+    ul li {
+        margin: 2px 0;
+    }
+
+    li {
+        margin-bottom: 12px;
+    }
+
+    /* Question images */
+    img.question-img {
+        display: block;
+        max-width: 150px; /* reduce size further */
+        height: auto;
+        margin-top: 5px;
+        border-radius: 5px;
+        box-shadow: 0 1px 6px rgba(0,0,0,0.1);
+    }
+
+    strong {
+        color: #111827;
+    }
+</style>
+</head>
+<body>
+
+    <!-- Header with 2 logos and centered title -->
+    <header>
+        <div class="logo-container">
+            <img class="logo" src="{% static 'MSU_logo.png' %}" alt="Logo 1">
+            <!-- <img class="logo" src="{% static 'boardmate1.png' %}" alt="Logo 2"> -->
+        </div>
+        <div class="header-text">
+            <h1>Mindanao State University Review Center</h1>
+            <h2>Board Exam for {{ board_exam }}</h2>
+            <h2>Subject: {{ subject }}</h2>
+        </div>
+    </header>
+    
+    <!-- Test Info -->
+    <h3>Test ID: {{ set_id }}</h3>
+    <h3>{{ set_name }} Questions</h3>
+
+    <!-- Questions -->
+    <ol>
+        {% for q in questions %}
+        <li>
+            <strong>{{ q.question }}</strong>
+            {% if q.image_url %}
+                <img class="question-img" src="{{ q.image_url }}" alt="Question Image">
+            {% endif %}
+            <ul>
+                {% for c in q.choices %}
+                    <li>{{ c.letter }}. {{ c.text }}</li>
+                {% endfor %}
+            </ul>
+        </li>
+        {% endfor %}
+    </ol>
+        
+
+</body>
+</html>

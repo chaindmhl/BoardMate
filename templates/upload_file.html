@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Import Questions | BoardMate</title>
+  <link
+    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+    rel="stylesheet"
+  />
+  <style>
+    body {
+      font-family: "Poppins", Arial, sans-serif;
+      background-color: #f4f6f8;
+      color: #333;
+    }
+
+    .navbar {
+      background-color: #1f2937;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      padding-top: 6px !important;
+      padding-bottom: 6px !important;
+    }
+
+    .navbar-brand {
+      font-weight: 600;
+      color: #fff !important;
+      font-size: 1.1rem;
+    }
+
+    .navbar-brand:hover {
+        color: #10b981 !important; 
+        transform: scale(1.05);
+    }
+
+    .nav-link {
+      color: #fff !important;
+      transition: color 0.3s ease;
+      font-size: 1 rem;
+    }
+
+    .nav-link:hover {
+      color: #10b981 !important;
+    }
+
+    h1 {
+      text-align: center;
+      margin: 40px 0 20px;
+      color: #1f2937;
+      font-weight: 600;
+    }
+
+    form {
+      max-width: 600px;
+      margin: 0 auto 60px;
+      background-color: #fff;
+      padding: 30px 35px;
+      border-radius: 10px;
+      box-shadow: 0 0 20px rgba(0, 0, 0, 0.05);
+      animation: fadeIn 0.5s ease-in-out;
+    }
+
+    label {
+      font-weight: 500;
+      margin-bottom: 6px;
+      color: #1f2937;
+    }
+
+    select,
+    input[type="file"],
+    input[type="text"] {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      margin-bottom: 18px;
+      font-size: 15px;
+    }
+
+    button[type="submit"] {
+      background-color: #10b981;
+      color: #fff;
+      border: none;
+      padding: 12px;
+      width: 100%;
+      font-weight: 500;
+      border-radius: 8px;
+      transition: all 0.3s ease;
+    }
+
+    button[type="submit"]:hover {
+      background-color: #059669;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+  </style>
+
+  <script>
+    function updateFileAccept() {
+      const fileType = document.getElementById("file_type").value;
+      const fileInput = document.getElementById("file_upload");
+
+      if (fileType) {
+        fileInput.accept = fileType;
+        fileInput.disabled = false;
+      } else {
+        fileInput.accept = "";
+        fileInput.disabled = true;
+      }
+    }
+
+    // Convert Django dictionary into JavaScript
+    const BOARD_EXAM_TOPICS = JSON.parse('{{ BOARD_EXAM_TOPICS_JSON|escapejs }}');
+
+    function updateSubjects() {
+      const course = document.getElementById("course").value;
+      const subjectSelect = document.getElementById("subject");
+      const topicSelect = document.getElementById("topic");
+
+      subjectSelect.innerHTML = '<option value="">-- Select Subject --</option>';
+      topicSelect.innerHTML = '<option value="">-- Select Topic --</option>';
+
+      if (course && BOARD_EXAM_TOPICS[course]) {
+        Object.keys(BOARD_EXAM_TOPICS[course]).forEach(subject => {
+          subjectSelect.innerHTML += `<option value="${subject}">${subject}</option>`;
+        });
+      }
+    }
+
+    function updateTopics() {
+      const course = document.getElementById("course").value;
+      const subject = document.getElementById("subject").value;
+      const topicSelect = document.getElementById("topic");
+
+      topicSelect.innerHTML = '<option value="">-- Select Topic --</option>';
+
+      if (course && subject && BOARD_EXAM_TOPICS[course][subject]) {
+        BOARD_EXAM_TOPICS[course][subject].forEach(topic => {
+          topicSelect.innerHTML += `<option value="${topic}">${topic}</option>`;
+        });
+      }
+    }
+
+    function validateForm() {
+      const course = document.getElementById("course").value.trim();
+      const subject = document.getElementById("subject").value.trim();
+      const topic = document.getElementById("topic").value.trim();
+      const fileType = document.getElementById("file_type").value;
+      const fileInput = document.getElementById("folder_upload");
+
+      if (!course) {
+        alert("Course is required!");
+        return false;
+      }
+
+      if (!subject) {
+        alert("Subject is required!");
+        return false;
+      }
+
+      if (!topic) {
+        alert("Topic is required!");
+        return false;
+      }
+
+      if (!fileType) {
+        alert("Please select a file type.");
+        return false;
+      }
+
+      if (!fileInput.value) {
+        alert("Please select a folder to upload.");
+        return false;
+      }
+
+      return true;
+    }
+  </script>
+</head>
+<body>
+  <!-- Navbar -->
+  <nav class="navbar navbar-expand-lg navbar-dark">
+    <div class="container">
+      <a class="navbar-brand" href="{% url 'home' %}">BoardMate</a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
+        <ul class="navbar-nav">
+          <li class="nav-item">
+            <li class="nav-item"><a class="nav-link" href="{% url 'question_bank' %}">Question Bank</a></li>
+            <a class="nav-link" href="{% url 'logout' %}">Logout</a>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Page Header -->
+  <h1>Import Questions</h1>
+
+  <!-- Upload Form -->
+  <form action="/upload-file/" method="post" enctype="multipart/form-data" onsubmit="return validateForm()">
+    {% csrf_token %}
+
+    <!-- COURSE / BOARD EXAM -->
+    <div>
+      <label for="course">Board Exam / Course:</label>
+      <select id="course" name="course" required onchange="updateSubjects()">
+        <option value="">-- Select Course --</option>
+        {% for course_name in BOARD_EXAMS %}
+          <option value="{{ course_name }}">{{ course_name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <!-- SUBJECT -->
+    <div>
+      <label for="subject">Subject:</label>
+      <select id="subject" name="subject" required onchange="updateTopics()">
+        <option value="">-- Select Subject --</option>
+      </select>
+    </div>
+
+    <!-- TOPIC -->
+    <div>
+      <label for="topic">Topic:</label>
+      <select id="topic" name="topic" required>
+        <option value="">-- Select Topic --</option>
+      </select>
+    </div>
+    <div>
+      <label for="file_type">Choose File Type:</label>
+      <select id="file_type" name="file_type" onchange="updateFileAccept()" required>
+        <option value="">-- Select --</option>
+        <option value=".docx">DOCX</option>
+        <option value=".txt">TXT</option>
+        <option value=".pdf">PDF</option>
+        <option value=".xlsx">XLSX</option>
+      </select>
+    </div>
+  
+    <div>
+      <label for="folder_upload">Select Folder (with file + images):</label>
+      <input type="file" id="folder_upload" name="folder_upload" webkitdirectory directory required />
+      <small class="text-muted">
+        Upload a folder that contains your question file and related images.<br>
+        Example folder structure:<br>
+        <code>
+          MyQuestions/<br>
+          ├── exam1.docx<br>
+          ├── image1.jpg<br>
+          ├── image2.png<br>
+        </code>
+      </small>
+    </div>
+  
+    <button type="submit">Upload Folder</button>
+  </form>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

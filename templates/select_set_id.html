@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Select Set ID</title>
+</head>
+<body>
+    <h2>Select Set ID</h2>
+    <form method="post" action="{% url 'answer_online_exam' %}">
+        {% csrf_token %}
+        <label for="set_id">Select Set ID:</label>
+        <select name="set_id" id="set_id">
+            {% for set_id in set_ids %}
+            <option value="{{ set_id }}">{{ set_id }}</option>
+            {% endfor %}
+        </select>
+        <button type="submit">Create Exam</button>
+    </form>
+</body>
+</html>

@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generated Test | BoardMate</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <style>
+        body {
+            font-family: "Poppins", Arial, sans-serif;
+            background-color: #f4f6f8;
+            color: #333;
+        }
+
+        /* Navbar */
+        .navbar {
+            background-color: #1f2937;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        .navbar-brand {
+            font-weight: 600;
+            color: #fff !important;
+        }
+        .nav-link {
+            color: #fff !important;
+            transition: color 0.3s ease;
+        }
+        .nav-link:hover {
+            color: #60a5fa !important;
+        }
+
+        /* Page Header */
+        h1 {
+            text-align: center;
+            margin: 20px 0 20px;
+            color: #1f2937;
+            font-weight: 600;
+        }
+        h2 {
+            text-align: left;
+            margin: 10px 0 10px;
+            color: #2c4de0;
+            font-weight: 100;
+        }
+
+        /* Grid for question sections */
+        .grid-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            max-width: 1200px;
+            margin: 0 auto 40px;
+        }
+
+        .question-section {
+            background-color: #f9fafb;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 20px;
+            transition: 0.3s ease;
+        }
+
+        .question-section:hover {
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+            background-color: #ffffff;
+        }
+
+        ol {
+            padding-left: 20px;
+        }
+
+        ul {
+            list-style-type: none;
+            padding-left: 0;
+        }
+
+        li {
+            margin-bottom: 5px;
+        }
+
+        img {
+            max-width: 120px;
+            height: auto;
+            margin-top: 5px;
+        }
+
+        .btn-pdf {
+            background-color: #f18155;
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            padding: 10px 20px;
+            cursor: pointer;
+            transition: 0.3s ease;
+            margin-right: 10px;
+        }
+
+        .btn-pdf:hover {
+            background-color: #d16a42;
+        }
+
+        .btn-online {
+            background-color: #10b981;
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            padding: 10px 20px;
+            cursor: pointer;
+            transition: 0.3s ease;
+        }
+
+        .btn-online:hover {
+            background-color: #059669;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark">
+        <div class="container">
+            <a class="navbar-brand" href="{% url 'home' %}">BoardMate</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
+                <ul class="navbar-nav">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'logout' %}">Logout</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Page Header -->
+    <h1>Generated Test</h1>
+
+    <!-- Grid container -->
+    <div class="grid-container">
+        <!-- Set A questions -->
+        <div class="question-section">
+            <h2 class="text-primary">Set A Questions</h2>
+            <ol>
+                {% for question in set_a_questions %}
+                    <li>
+                        {{ question.question_text }}
+                        {% if question.image %}
+                            <br>
+                            <img src="{{ question.image.url }}" alt="">
+                        {% endif %}
+                        <ul>
+                            <li>A. {{ question.choiceA }}</li>
+                            <li>B. {{ question.choiceB }}</li>
+                            <li>C. {{ question.choiceC }}</li>
+                            <li>D. {{ question.choiceD }}</li>
+                            <li>E. {{ question.choiceE }}</li>
+                        </ul>
+                    </li>
+                {% endfor %}
+            </ol>
+        </div>
+
+        <!-- Set B questions -->
+        <div class="question-section">
+            <h2 class="text-primary">Set B Questions</h2>
+            <ol>
+                {% for question in set_b_questions %}
+                    <li>
+                        {{ question.question_text }}
+                        {% if question.image %}
+                            <br>
+                            <img src="{{ question.image.url }}" alt="">
+                        {% endif %}
+                        <ul>
+                            <li>A. {{ question.choiceA }}</li>
+                            <li>B. {{ question.choiceB }}</li>
+                            <li>C. {{ question.choiceC }}</li>
+                            <li>D. {{ question.choiceD }}</li>
+                            <li>E. {{ question.choiceE }}</li>
+                        </ul>
+                    </li>
+                {% endfor %}
+            </ol>
+        </div>
+    </div>
+
+    <!-- Buttons -->
+    <div class="text-center mb-5">
+        <form action="{% url 'download_test_pdf' %}" method="post" style="display:inline-block;">
+            {% csrf_token %}
+            <input type="hidden" name="board_exam" value="{{ board_exam|default_if_none:'' }}">
+            <input type="hidden" name="subject" value="{{ subject }}">
+            <input type="hidden" name="set_a_id" value="{{ set_a_id }}">
+            <input type="hidden" name="set_b_id" value="{{ set_b_id }}">
+            {% for question in set_a_questions %}
+                <input type="hidden" name="set_a_question_ids[]" value="{{ question.id }}">
+                <input type="hidden" name="set_a_questions[]" value="{{ question.question_text }}">
+                <input type="hidden" name="set_a_choicesA[]" value="{{ question.choiceA }}">
+                <input type="hidden" name="set_a_choicesB[]" value="{{ question.choiceB }}">
+                <input type="hidden" name="set_a_choicesC[]" value="{{ question.choiceC }}">
+                <input type="hidden" name="set_a_choicesD[]" value="{{ question.choiceD }}">
+                <input type="hidden" name="set_a_choicesE[]" value="{{ question.choiceE }}">
+            {% endfor %}
+            {% for question in set_b_questions %}
+                <input type="hidden" name="set_b_question_ids[]" value="{{ question.id }}">
+                <input type="hidden" name="set_b_questions[]" value="{{ question.question_text }}">
+                <input type="hidden" name="set_b_choicesA[]" value="{{ question.choiceA }}">
+                <input type="hidden" name="set_b_choicesB[]" value="{{ question.choiceB }}">
+                <input type="hidden" name="set_b_choicesC[]" value="{{ question.choiceC }}">
+                <input type="hidden" name="set_b_choicesD[]" value="{{ question.choiceD }}">
+                <input type="hidden" name="set_b_choicesE[]" value="{{ question.choiceE }}">
+            {% endfor %}
+            <button type="submit" class="btn-pdf">Save and Download Test as PDF</button>
+        </form>
+
+        <form action="{% url 'online_answer_test' %}" method="post" style="display:inline-block;">
+            {% csrf_token %}
+            <input type="hidden" name="board_exam" value="{{ board_exam|default_if_none:'' }}">
+            <input type="hidden" name="subject" value="{{ subject }}">
+            <input type="hidden" name="set_a_id" value="{{ set_a_id }}">
+            <input type="hidden" name="set_b_id" value="{{ set_b_id }}">
+            {% for question in set_a_questions %}
+                <input type="hidden" name="set_a_question_ids[]" value="{{ question.id }}">
+                <input type="hidden" name="set_a_questions[]" value="{{ question.question_text }}">
+                <input type="hidden" name="set_a_choicesA[]" value="{{ question.choiceA }}">
+                <input type="hidden" name="set_a_choicesB[]" value="{{ question.choiceB }}">
+                <input type="hidden" name="set_a_choicesC[]" value="{{ question.choiceC }}">
+                <input type="hidden" name="set_a_choicesD[]" value="{{ question.choiceD }}">
+                <input type="hidden" name="set_a_choicesE[]" value="{{ question.choiceE }}">
+            {% endfor %}
+            {% for question in set_b_questions %}
+                <input type="hidden" name="set_b_question_ids[]" value="{{ question.id }}">
+                <input type="hidden" name="set_b_questions[]" value="{{ question.question_text }}">
+                <input type="hidden" name="set_b_choicesA[]" value="{{ question.choiceA }}">
+                <input type="hidden" name="set_b_choicesB[]" value="{{ question.choiceB }}">
+                <input type="hidden" name="set_b_choicesC[]" value="{{ question.choiceC }}">
+                <input type="hidden" name="set_b_choicesD[]" value="{{ question.choiceD }}">
+                <input type="hidden" name="set_b_choicesE[]" value="{{ question.choiceE }}">
+            {% endfor %}
+            <button type="submit" class="btn-online">Save and Preview Online Exam</button>
+        </form>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

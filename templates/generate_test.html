@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Generate Test | BoardMate</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <style>
+    body { font-family: "Poppins", Arial, sans-serif; background-color: #f4f6f8; color: #333; }
+    .navbar {
+      background-color: #1f2937;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      padding-top: 6px !important;
+      padding-bottom: 6px !important;
+    }
+
+    .navbar-brand {
+      font-weight: 600;
+      color: #fff !important;
+      font-size: 1.1rem;
+    }
+
+    .navbar-brand:hover {
+        color: #10b981 !important; 
+        transform: scale(1.05);
+    }
+
+    .nav-link {
+      color: #fff !important;
+      transition: color 0.3s ease;
+      font-size: 1 rem;
+    }
+
+    .nav-link:hover {
+      color: #10b981 !important;
+    }
+    h1 { text-align: center; margin: 40px 0 20px; color: #1f2937; font-weight: 600; }
+    form { max-width: 700px; margin: 0 auto; padding: 30px; background: #fff; border-radius: 10px; box-shadow: 0 0 20px rgba(0,0,0,0.05); }
+    label { font-weight: 500; }
+    .form-control, .form-select { margin-bottom: 15px; border-radius: 8px; border: 1px solid #e5e7eb; padding: 10px; }
+    .btn-generate { width: 100%; background-color: #10b981; color: white; border: none; border-radius: 8px; padding: 12px; font-size: 16px; font-weight: 500; }
+    .btn-generate:hover { background-color: #059669; }
+    .error-message { color: #ef4444; font-size: 14px; margin-top: 10px; }
+  </style>
+</head>
+
+<body>
+  <!-- Navbar -->
+  <nav class="navbar navbar-expand-lg navbar-dark">
+    <div class="container">
+      <a class="navbar-brand" href="{% url 'home' %}">BoardMate</a>
+      <div class="collapse navbar-collapse justify-content-end">
+        <ul class="navbar-nav">
+          <li class="nav-item"><a class="nav-link" href="{% url 'question_bank' %}">Question Bank</a></li>
+          <li class="nav-item"><a class="nav-link" href="{% url 'generate_test' %}">Generate Test</a></li>
+          <li class="nav-item"><a class="nav-link" href="{% url 'logout' %}">Logout</a></li>
+        </ul>
+      </div>
+    </div>
+  </nav>
+
+  <h1>Generate Test</h1>
+
+  <form method="post" onsubmit="return validateForm()">
+    {% csrf_token %}
+
+    <div class="mb-3">
+      <label for="board_exam">Board Exam:</label>
+      <select id="board_exam" name="board_exam" class="form-select" onchange="updateSubjects()" required>
+        <option value="">--Select Board Exam--</option>
+        {% for exam in BOARD_EXAMS %}
+          <option value="{{ exam }}">{{ exam }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="mb-3">
+      <label for="subject">Subject:</label>
+      <select id="subject" name="subject" class="form-select" required>
+        <option value="">--Select Subject--</option>
+      </select>
+    </div>
+
+    <div class="mb-3">
+      <label for="num_questions">Number of Questions:</label>
+      <input type="number" id="num_questions" name="num_questions" class="form-control" min="1" required>
+    </div>
+
+    <div class="mb-3">
+      <label>Difficulty Percentage Split (total must equal 100%):</label>
+    
+      <div class="mb-2">
+        <label for="easy_pct" class="form-label">Easy: <span id="easy_val">33</span>%</label>
+        <input type="range" class="form-range" id="easy_pct" name="easy_pct" min="0" max="100" value="33">
+      </div>
+    
+      <div class="mb-2">
+        <label for="medium_pct" class="form-label">Moderate: <span id="medium_val">33</span>%</label>
+        <input type="range" class="form-range" id="medium_pct" name="medium_pct" min="0" max="100" value="33">
+      </div>
+    
+      <div class="mb-2">
+        <label for="hard_pct" class="form-label">Hard: <span id="hard_val">34</span>%</label>
+        <input type="range" class="form-range" id="hard_pct" name="hard_pct" min="0" max="100" value="34">
+      </div>
+    </div>
+    
+    <button type="submit" class="btn-generate">Generate Test</button>
+
+    {% if error_message %}
+      <p class="error-message">{{ error_message }}</p>
+    {% endif %}
+  </form>
+
+  {% if selected_questions %}
+  <div class="generated-section mt-4">
+    <h2>Generated Questions</h2>
+    <ol>
+      {% for question in selected_questions %}
+        <li>
+          <strong>{{ question.question_text }}</strong><br>
+          {% if question.image %}
+            <img src="{{ question.image.url }}" alt="Question Image">
+          {% endif %}
+        </li>
+      {% endfor %}
+    </ol>
+  </div>
+  {% endif %}
+
+  <script>
+    const SUBJECTS = JSON.parse('{{ SUBJECTS_JSON|escapejs }}');
+
+    function updateSubjects() {
+      const boardExamSelect = document.getElementById("board_exam");
+      const subjectSelect = document.getElementById("subject");
+      subjectSelect.innerHTML = '<option value="">--Select Subject--</option>';
+      const selectedExam = boardExamSelect.value;
+      if (selectedExam && SUBJECTS[selectedExam]) {
+        Object.keys(SUBJECTS[selectedExam]).forEach(sub => {
+          subjectSelect.add(new Option(sub, sub));
+        });
+      }
+    }
+
+    function validateForm() {
+      const subject = document.getElementById("subject").value;
+      const numQuestions = document.getElementById("num_questions").value;
+      const easyPct = document.getElementById("easy_pct").value;
+      const mediumPct = document.getElementById("medium_pct").value;
+      const hardPct = document.getElementById("hard_pct").value;
+
+      if (!subject || !numQuestions || !easyPct || !mediumPct || !hardPct) {
+        alert("⚠️ Please fill in all fields before generating a test.");
+        return false;
+      }
+
+      const totalPct = parseInt(easyPct) + parseInt(mediumPct) + parseInt(hardPct);
+      if (totalPct !== 100) {
+        alert("⚠️ Total percentage of Easy + Medium + Hard must equal 100%");
+        return false;
+      }
+
+      if (numQuestions <= 0) {
+        alert("⚠️ Number of questions must be greater than 0.");
+        return false;
+      }
+
+      return true;
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+    const easySlider = document.getElementById('easy_pct');
+    const mediumSlider = document.getElementById('medium_pct');
+    const hardSlider = document.getElementById('hard_pct');
+
+    const easyVal = document.getElementById('easy_val');
+    const mediumVal = document.getElementById('medium_val');
+    const hardVal = document.getElementById('hard_val');
+
+    function updateValues() {
+      easyVal.innerText = easySlider.value;
+      mediumVal.innerText = mediumSlider.value;
+      hardVal.innerText = hardSlider.value;
+    }
+
+    function adjustSliders(changedSlider) {
+      let easy = parseInt(easySlider.value);
+      let medium = parseInt(mediumSlider.value);
+      let hard = parseInt(hardSlider.value);
+
+      if (changedSlider === easySlider) {
+        // Easy changed → adjust Moderate and Hard proportionally
+        let remaining = 100 - easy;
+        medium = Math.round(medium / (medium + hard) * remaining || 0);
+        hard = remaining - medium;
+      } else if (changedSlider === mediumSlider) {
+        // Moderate changed → adjust Easy and Hard proportionally
+        let remaining = 100 - medium;
+        // Keep Easy first
+        easy = Math.min(easy, remaining);
+        hard = remaining - easy;
+      } else if (changedSlider === hardSlider) {
+        // Hard changed → only adjust Moderate
+        let remaining = 100 - hard;
+        medium = remaining - easy;
+        if (medium < 0) { 
+          medium = 0; 
+          easy = remaining;
+        }
+      }
+
+      easySlider.value = easy;
+      mediumSlider.value = medium;
+      hardSlider.value = hard;
+
+      updateValues();
+    }
+
+    easySlider.addEventListener('input', () => adjustSliders(easySlider));
+    mediumSlider.addEventListener('input', () => adjustSliders(mediumSlider));
+    hardSlider.addEventListener('input', () => adjustSliders(hardSlider));
+
+    // Initialize default values
+    easySlider.value = 33;
+    mediumSlider.value = 33;
+    hardSlider.value = 34;
+    updateValues();
+  });
+  </script>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Exam Result | BoardMate</title>
+    {% load static %}
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <style>
+        body {
+            font-family: "Poppins", Arial, sans-serif;
+            background-color: #f4f6f8;
+            color: #333;
+            /* margin: 0;
+            padding: 0; */
+        }
+
+        /* Navbar (Same Style as Dashboard) */
+        .navbar {
+            background-color: #1f2937;
+            padding-top: 6px !important;
+            padding-bottom: 6px !important;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .navbar-brand {
+            font-weight: 600;
+            color: #fff !important;
+            font-size: 1.1rem;
+        }
+
+        .nav-link {
+            color: #fff !important;
+            transition: color 0.3s ease;
+            font-size: 0.95rem;
+        }
+
+        .nav-link:hover {
+            color: #60a5fa !important;
+        }
+
+        /* Page Title */
+        h2 {
+            text-align: center;
+            margin-top: 40px;
+            color: #1f2937;
+            font-weight: 600;
+            font-size: 2rem;
+        }
+
+        /* Result Card */
+        .result-container {
+            max-width: 450px;
+            margin: 40px auto;
+            padding: 25px;
+            background-color: #fff;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.05);
+            animation: fadeIn 0.5s ease-in-out;
+        }
+
+        .result {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .result p {
+            font-size: 28px;
+            font-weight: 600;
+            color: #2563eb;
+        }
+
+        .info {
+            padding: 15px;
+            background-color: #f9fafb;
+            border-radius: 8px;
+            border: 1px solid #e5e7eb;
+        }
+
+        .info p {
+            color: #555;
+            font-size: 16px;
+            margin: 8px 0;
+        }
+
+        /* Button styling */
+        .btn-home {
+            display: block;
+            margin: 25px auto 0;
+            background-color: #10b981;
+            color: #fff;
+            padding: 10px 18px;
+            border: none;
+            border-radius: 8px;
+            font-size: 15px;
+            text-decoration: none;
+            transition: background-color 0.3s ease;
+        }
+
+        .btn-home:hover {
+            background-color: #059669;
+            color: #fff;
+        }
+
+        /* Fade animation */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+
+<!-- Navbar -->
+<nav class="navbar navbar-expand-lg navbar-dark">
+    <div class="container">
+        <a class="navbar-brand" href="{% url 'home_student' %}">BoardMate</a>
+        <div class="collapse navbar-collapse justify-content-end">
+            <ul class="navbar-nav">
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'view_results' %}">My Results</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'logout' %}">Logout</a>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<!-- Page Content -->
+<h2>Exam Result</h2>
+<div class="result-container">
+    <div class="result">
+        <p>Your Score: {{ result.score }} / {{ result.total_items }}</p>
+        <p><small>{{ percent }}%</small></p>
+    </div>
+
+    <div class="info">
+        <p><strong>Student Name:</strong> {{ result.student_name }}</p>
+        <p><strong>Subject:</strong> {{ result.subject }}</p>
+        <p><strong>Exam ID:</strong> {{ result.exam_id }}</p>
+        <p><strong>Date Taken:</strong> {{ result.timestamp|date:"M d, Y - h:i A" }}</p>
+        <p><strong>Elapsed Time:</strong> {{ result.elapsed_time }}</p>
+    </div>
+
+    <a href="{% url 'home_student' %}" class="btn-home">Back to Home</a>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

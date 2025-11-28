@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Dashboard</title>
+    <style>
+        /* Style for buttons */
+        .button {
+            display: inline-block;
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: white;
+            text-decoration: none;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Welcome to Student Dashboard</h1>
+    <div>
+        <button class="button" onclick="navigateToCheckAnswer()">Check Answer Sheet</button>
+        <button class="button" onclick="navigateToViewGrades()">View Grades</button>
+    </div>
+
+    <script>
+        // Define functions to navigate to URLs
+        function navigateToCheckAnswer() {
+            window.location.href = "{% url 'upload_answer' %}";
+        }
+        function navigateToViewGrades() {
+            window.location.href = "{% url 'view_grades' %}";
+        }
+    </script>
+</body>
+</html>
