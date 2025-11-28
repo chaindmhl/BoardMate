@@ -44,6 +44,7 @@ from collections import defaultdict
 from django.views.decorators.http import require_http_methods
 import datetime
 import openai
+from dotenv import load_dotenv
 
 
 logo_path = os.path.join(settings.BASE_DIR, 'static', 'boardmate1.png')  # full path
