@@ -30,4 +30,6 @@ RUN python manage.py collectstatic --noinput || true
 EXPOSE 9000
 
 # Run the Django application
-CMD ["python", "manage.py", "runserver", "0.0.0.0:9000"]
+# CMD ["python", "manage.py", "runserver", "0.0.0.0:9000"]
+CMD ["gunicorn", "--bind", "0.0.0.0:9000", "Electronic_exam.wsgi:application"]
+
