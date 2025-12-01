@@ -11,7 +11,7 @@ router = DefaultRouter()
 
 urlpatterns = [
     # path('', include(router.urls)),
-    path('', views.home, name='home'),
+    path('', views.login_view, name='login'),
     path('api/', include(router.urls)), 
     path('signup/', views.signup, name='signup'),
     path('home/', views.home, name='home'),
