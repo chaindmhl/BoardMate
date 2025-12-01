@@ -17,28 +17,25 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
-from board_exam import views 
-from django.contrib.auth import views as auth_views
+from board_exam import views
 
-# DRF router
 from rest_framework import routers
 router = routers.DefaultRouter()
 
-
-# urlpatterns = [
-#     path('admin/', admin.site.urls),
-#     path("", include("board_exam.urls")),
-# ]
 urlpatterns = [
-    path('api/', include(router.urls)), 
     path('admin/', admin.site.urls),
+    path('api/', include(router.urls)),
+
+    # App URLs
     path('', include('board_exam.urls')),
+
+    # Authentication (optional: can also be inside board_exam.urls)
     path('signup/', views.signup, name='signup'),
-    path('home/', views.home, name='home'),  
     path('login/', views.login_view, name='login'),
     path('logout/', views.logout_view, name='logout'),
-]# still available
+]
 
 # Serve media files in development
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+
