@@ -19,10 +19,16 @@ from django.conf import settings
 from django.conf.urls.static import static
 
 
+# urlpatterns = [
+#     path('admin/', admin.site.urls),
+#     path("", include("board_exam.urls")),
+# ]
 urlpatterns = [
-    path('admin/', admin.site.urls),
-    path("", include("board_exam.urls")),
-]
+    path('', views.home, name='home'),         # <--- HOMEPAGE
+    path('api/', include(router.urls)),        # optional: move API under /api/
+    
+    path('signup/', views.signup, name='signup'),
+    path('home/', views.home, name='home'),    # still available
 
 # Serve media files in development
 if settings.DEBUG:
