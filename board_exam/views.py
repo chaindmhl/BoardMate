@@ -71,6 +71,12 @@ def signup(request):
             # Determine role and create the related instance
             role = form.cleaned_data.get('role')
             if role == 'teacher':
+                user.is_staff = True  # <-- this line makes them staff
+            else:
+                user.is_staff = False
+
+            user.save()  # save the user
+            if role == 'teacher':
                 Teacher.objects.create(
                     user=user,
                     last_name=form.cleaned_data.get('last_name'),
