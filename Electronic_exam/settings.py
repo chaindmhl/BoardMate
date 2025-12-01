@@ -9,6 +9,12 @@ if os.environ.get("RAILWAY_ENV") != "production":
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+# Redirect users to your custom login view instead of /accounts/login/
+LOGIN_URL = '/login/'            # URL where users can log in
+LOGIN_REDIRECT_URL = '/'         # URL to redirect after login
+LOGOUT_REDIRECT_URL = '/'        # URL after logout
+
+
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/3.2/howto/deployment/checklist/
