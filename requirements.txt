@@ -13,3 +13,4 @@ openpyxl
 openai
 python-dotenv
 gunicorn
+whitenoise
