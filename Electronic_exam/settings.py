@@ -163,3 +163,7 @@ CSRF_COOKIE_SECURE = False
 
 # Set CSRF_COOKIE_HTTPONLY to True for added security
 CSRF_COOKIE_HTTPONLY = True
+
+CSRF_TRUSTED_ORIGINS = [
+    'https://boardmate-production-13bc.up.railway.app'
+]
