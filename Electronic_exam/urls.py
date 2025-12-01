@@ -18,6 +18,7 @@ from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
 from board_exam import views 
+from django.contrib.auth import views as auth_views
 
 # DRF router
 from rest_framework import routers
@@ -33,7 +34,10 @@ urlpatterns = [
     path('api/', include(router.urls)),        # optional: move API under /api/
     
     path('signup/', views.signup, name='signup'),
-    path('home/', views.home, name='home'),    # still available
+    path('home/', views.home, name='home'),  
+    path('login/', auth_views.LoginView.as_view(), name='login'),
+    path('logout/', auth_views.LogoutView.as_view(), name='logout'),
+]# still available
 ]
 # Serve media files in development
 if settings.DEBUG:
