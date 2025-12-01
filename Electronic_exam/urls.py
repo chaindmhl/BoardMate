@@ -29,7 +29,7 @@ urlpatterns = [
     
     path('signup/', views.signup, name='signup'),
     path('home/', views.home, name='home'),    # still available
-
+]
 # Serve media files in development
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
