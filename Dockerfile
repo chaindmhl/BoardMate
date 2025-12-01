@@ -4,6 +4,7 @@ FROM python:3.9
 ENV PYTHONDONTWRITEBYTECODE 1
 ENV PYTHONUNBUFFERED 1
 ENV PYTHONPATH="${PYTHONPATH}:/app"
+ENV DJANGO_SETTINGS_MODULE=Electronic_exam.settings
 
 WORKDIR /app
 
@@ -12,21 +13,20 @@ COPY requirements.txt /app/
 RUN pip install --no-cache-dir -r requirements.txt
 RUN apt-get update && apt-get install -y libgl1 libglib2.0-0
 
-# Copy code
+# Copy project code
 COPY . /app/
 
 # Create static and media directories
 RUN mkdir -p /app/staticfiles /app/media
 
-# Collect static files
-RUN python manage.py collectstatic --noinput
+# Collect static files at build (optional)
+RUN python manage.py collectstatic --noinput || true
 
 # Expose port
 EXPOSE 9000
 
-# Use WhiteNoise for static files (recommended)
-ENV DJANGO_SETTINGS_MODULE=Electronic_exam.settings
+# Use entrypoint script to run migrations + start server
+COPY entrypoint.sh /app/entrypoint.sh
+RUN chmod +x /app/entrypoint.sh
 
-CMD ["gunicorn", "--bind", "0.0.0.0:9000", "Electronic_exam.wsgi:application"]
-
-
+CMD ["/app/entrypoint.sh"]
