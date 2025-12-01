@@ -30,7 +30,8 @@ router = routers.DefaultRouter()
 #     path("", include("board_exam.urls")),
 # ]
 urlpatterns = [
-    path('api/', include(router.urls)),        # optional: move API under /api/
+    path('api/', include(router.urls)), 
+    path('admin/', admin.site.urls),
     path('', include('board_exam.urls')),
     path('signup/', views.signup, name='signup'),
     path('home/', views.home, name='home'),  
