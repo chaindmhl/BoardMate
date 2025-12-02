@@ -36,6 +36,8 @@ RUN mkdir -p /app/model1 /app/model2 \
     && unzip -j model2.zip -d /app/model2 \
     && rm model2.zip
 
+RUN echo "MODEL1 contents:" && ls -l /app/model1
+RUN echo "MODEL2 contents:" && ls -l /app/model2
 
 
 # Create directories
