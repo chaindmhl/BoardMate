@@ -1,8 +1,6 @@
 # tasks.py
 import cv2
 import os
-import time
-import uuid
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.shortcuts import get_object_or_404
@@ -13,9 +11,11 @@ User = get_user_model()
 MODEL1_DIR = "/models/model1"
 MODEL2_DIR = "/models/model2"
 
-
 # Confidence threshold for YOLO detection
 CONF_THRESHOLD = 0.5
+
+# Dictionary to cache models per worker
+_worker_models = {}
 
 def load_yolo_model(model_dir, cfg_name, weights_name, names_name):
     """Load YOLO model and class names given exact filenames"""
@@ -35,18 +35,21 @@ def load_yolo_model(model_dir, cfg_name, weights_name, names_name):
 
     return net, classes
 
+def get_worker_models():
+    """
+    Load YOLO models once per worker (singleton).
+    Ensures safe loading in Django-Q workers.
+    """
+    if not _worker_models:
+        _worker_models["original"], _worker_models["original_classes"] = load_yolo_model(
+            MODEL1_DIR, "model1.cfg", "model1.weights", "model1.names"
+        )
+        _worker_models["cropped"], _worker_models["cropped_classes"] = load_yolo_model(
+            MODEL2_DIR, "model2.cfg", "model2.weights", "model2.names"
+        )
+    return _worker_models
 
-# Load both models
-NET_ORIGINAL, CLASSES_ORIGINAL = load_yolo_model(
-    MODEL1_DIR, "model1.cfg", "model1.weights", "model1.names"
-)
-
-NET_CROPPED, CLASSES_CROPPED = load_yolo_model(
-    MODEL2_DIR, "model2.cfg", "model2.weights", "model2.names"
-)
-
-
-def run_yolo_inference(net, image):
+def run_yolo_inference(net, image, classes):
     """Run YOLO detection and return detected classes"""
     height, width = image.shape[:2]
     blob = cv2.dnn.blobFromImage(image, 1/255.0, (416, 416), swapRB=True, crop=False)
@@ -75,6 +78,13 @@ def process_uploaded_answer(relative_image_path, exam_id, user_id):
     - Computes score
     - Saves result to the DB
     """
+    # Load models safely inside the worker
+    models = get_worker_models()
+    net_original = models["original"]
+    classes_original = models["original_classes"]
+    net_cropped = models["cropped"]
+    classes_cropped = models["cropped_classes"]
+
     # Build absolute path for Railway
     image_path = os.path.join(settings.MEDIA_ROOT, relative_image_path)
     if not os.path.exists(image_path):
@@ -87,8 +97,8 @@ def process_uploaded_answer(relative_image_path, exam_id, user_id):
         return
 
     # Run YOLO inference
-    original_detections = run_yolo_inference(NET_ORIGINAL, image)
-    cropped_detections = run_yolo_inference(NET_CROPPED, image)
+    original_detections = run_yolo_inference(net_original, image, classes_original)
+    cropped_detections = run_yolo_inference(net_cropped, image, classes_cropped)
 
     # Compute a simple score: count matches vs AnswerKey
     # (replace with your actual scoring logic)
@@ -106,7 +116,7 @@ def process_uploaded_answer(relative_image_path, exam_id, user_id):
 
     # Save result
     Result.objects.create(
-        user=user,  # must be user object
+        user=user,
         student_id=student.student_id,
         course=student.course,
         student_name=str(student),
