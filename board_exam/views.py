@@ -1227,181 +1227,42 @@ def download_exam_results(request):
     wb.save(response)
     return response
 
-def image_to_mask(image):
-    # Convert image to grayscale
-    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+# def image_to_mask(image):
+#     # Convert image to grayscale
+#     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
     
-    # Apply adaptive thresholding
-    _, mask = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
+#     # Apply adaptive thresholding
+#     _, mask = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
     
-    # Apply morphological operations to clean up the mask
-    kernel_size = (2, 2)
-    kernel = np.ones(kernel_size, np.uint8)
-    mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel)
+#     # Apply morphological operations to clean up the mask
+#     kernel_size = (2, 2)
+#     kernel = np.ones(kernel_size, np.uint8)
+#     mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel)
     
-    return mask
+#     return mask
+
+from django_q.tasks import async_task
 
 def upload_answer(request):
-    if request.method == 'POST' and request.FILES['image']:
-        # Handle the uploaded image
+    if request.method == 'POST' and request.FILES.get('image'):
         uploaded_image = request.FILES['image']
-        # Extract exam_id from the POST request
         exam_id = request.POST.get('exam_id')
-        # Retrieve the answer key from the database using exam_id
-        answer_key = get_object_or_404(AnswerKey, set_id=exam_id)
-        subject = answer_key.subject
-        # Read the uploaded image using OpenCV
-        # nparr = np.fromstring(uploaded_image.read(), np.uint8)
-        nparr = np.frombuffer(uploaded_image.read(), np.uint8)
-        image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-        
-        # Convert image to mask using image_to_mask function
-        mask = image_to_mask(image)
+        user_id = request.user.id
 
-        # Save the mask as an image
-        # cv2.imwrite('mask.jpg', mask)
-        
-        # Generate a unique filename for the mask image using timestamp and UUID
-        unique_filename = f'mask_{int(time.time())}_{uuid.uuid4()}.jpg'
+        # Save uploaded file
+        filename = f"uploads/{int(time.time())}_{uuid.uuid4()}.jpg"
+        os.makedirs("uploads", exist_ok=True)
+        with open(filename, 'wb') as f:
+            for chunk in uploaded_image.chunks():
+                f.write(chunk)
 
-        # Create the directory if it doesn't exist
-        directory = os.path.join('media', 'mask_images')
+        # Queue the heavy YOLO processing task
+        async_task("board_exam.tasks.process_uploaded_answer", filename, exam_id, user_id)
 
-        if not os.path.exists(directory):
-            os.makedirs(directory)
-
-        # Save the mask as an image with the unique filename
-        cv2.imwrite(os.path.join(directory, unique_filename), mask)
-        # Specify the path to YOLOv4 models and class names files
-        # model1_weights_path = "model1/model1.weights"
-        # model1_cfg_path = "model1/model1.cfg"
-        # model1_names_path = "model1/model1.names"
-
-        # model2_weights_path = "model2/model2.weights"
-        # model2_cfg_path = "model2/model2.cfg"
-        # model2_names_path = "model2/model2.names"
-
-        # # Load YOLOv4 models and class names
-        # # net_original = cv2.dnn.readNet(model1_weights_path, model1_cfg_path)
-        # classes_original = []
-        # with open(model1_names_path, "r") as f:
-        #     classes_original = [line.strip() for line in f.readlines()]
-
-        # net_cropped = cv2.dnn.readNet(model2_weights_path, model2_cfg_path)
-        # classes_cropped = []
-        # with open(model2_names_path, "r") as f:
-        #     classes_cropped = [line.strip() for line in f.readlines()]
-
-        # Specify the reference point from which to measure the distance
-        reference_point = (0, 0)  # Example point, you should specify your desired point here
-
-        # mask_image = cv2.imread('mask.jpg')
-        mask_image = cv2.imread(os.path.join('media', 'mask_images', unique_filename))
-
-        # Perform object detection with the first model
-        boxes_original, _, class_ids_original = detect_objects(mask_image, net_original, classes_original)
-
-        # Crop detected objects and perform detection with the second model
-        for i, box in enumerate(boxes_original):
-            x, y, w, h = box
-            cropped_object = mask_image[y:y+h, x:x+w]
-
-            # Get the class name corresponding to the detected object
-            class_name_original = classes_original[class_ids_original[i]]
-
-            # Check if class name is 'answer'
-            if class_name_original == 'answer':
-                # Perform object detection with the second model
-                boxes_cropped, _, class_ids_cropped = detect_objects(cropped_object, net_cropped, classes_cropped)
-
-                # Sort detected objects by distance from the reference point
-                object_dict = sort_objects_by_distance(boxes_cropped, class_ids_cropped, classes_cropped, reference_point)
-
-                # Group and assign sequence numbers to the detected objects
-                grouped_boxes = group_and_sequence(object_dict.values(), object_dict.keys())
-
-                # Create a dictionary to store seq_num:class pairs
-                seq_num_class_dict = {}
-
-                # Display the cropped object with bounding boxes, class labels, and reference point
-                for seq_num, i in grouped_boxes.items():
-                    # Find the corresponding box coordinates for the class
-                    box = boxes_cropped[i - 1]  # Subtract 1 since sequence numbers start from 1
-                    x, y, w, h = box
-
-                    # Draw bounding box
-                    cv2.rectangle(cropped_object, (x, y), (x+w, y+h), (0, 255, 0), 2)
-
-                    # Put class label above the bounding box
-                    cv2.putText(cropped_object, f"{seq_num}:{classes_cropped[class_ids_cropped[i - 1]]}", (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 1)
-
-                    # Find the corresponding class name using the class ID
-                    class_name = classes_cropped[class_ids_cropped[i - 1]]  # Subtract 1 since sequence numbers start from 1
-                    seq_num_class_dict[seq_num] = class_name
-
-                    # Draw reference point
-                    cv2.circle(cropped_object, reference_point, 5, (255, 0, 0), -1)
-
-                correct_answers = {str(k): v['letter'] for k, v in answer_key.answer_key.items()}
-                submitted_answers = seq_num_class_dict.values()
-
-                # # Calculate the score based on similarities between correct and submitted answers
-                # score = sum(correct_answer == submitted_answer for correct_answer, submitted_answer in zip(correct_answers.values(), submitted_answers))
-
-                # Calculate score
-                score = 0
-                comparison_results = {}
-                for seq_num, submitted_answer in seq_num_class_dict.items():
-                    correct_answer = correct_answers.get(str(seq_num))
-                   
-                    if correct_answer is not None:
-                        is_correct = submitted_answer == correct_answer
-                        comparison_results[seq_num] = {'submitted_answer': submitted_answer, 'correct_answer': correct_answer, 'is_correct': is_correct}
-                        if is_correct:
-                            score += 1
-
-                # Get the user_id from the request
-                user_id = request.user
-                print("User ID:", user_id)
-
-                # Get the student corresponding to the user_id
-                student = get_object_or_404(Student, user_id=user_id)
-                print("Student:", student)
-                print("Subject:", subject)
-                existing_results = Result.objects.filter(user=user_id)
-                print("Existing Results for User:", existing_results)
-                if Result.objects.filter(user=user_id, exam_id=exam_id).exists():
-                    # If a Result entry already exists for the user and exam_id, return a warning message
-                    return JsonResponse({'warning': 'An answer is already uploaded for this user and exam ID'})
-                else: 
-                    try:
-                        # Create a Result object and save it
-                        result = Result.objects.create(
-                            user = user_id,
-                            student_id=student.student_id,
-                            course=student.course,
-                            student_name = student,
-                            subject= subject,  # Replace "Your subject" with the subject name
-                            exam_id=exam_id,
-                            # answer=list(submitted_answers),
-                            answer = [seq_num_class_dict[k] for k in sorted(seq_num_class_dict.keys())],
-                            correct_answer=list(correct_answers.values()),
-                            score=score,
-                            is_submitted=True
-                        )
-                        print("Result:", result)  # Debug statement
-
-                    except IntegrityError:
-                        # If IntegrityError occurs (duplicate key), return a warning message
-                        return JsonResponse({'warning': 'An answer is already uploaded for this user and exam ID'})
-
-                    return JsonResponse({'score': score})  # Return an HttpResponse with the score
-
-        # If no 'answer' class is detected
-        return JsonResponse({'error': 'No answer class detected in the image'})
-
-    else:
-        return render(request, 'upload_answer.html')
+        # Immediately return a response
+        return JsonResponse({"status": "processing", "message": "Your answer is being processed."})
+    
+    return render(request, "upload_answer.html")
 
 def answer_sheet_view(request):
     if request.method == 'POST':
