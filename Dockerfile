@@ -31,14 +31,12 @@ COPY . /app/
 RUN mkdir -p /app/model1 /app/model2 \
     && curl -L -o model1.zip https://github.com/chaindmhl/BoardMate/releases/download/v1.0/model1.zip \
     && unzip model1.zip -d /app/model1_temp \
-    && mv /app/model1_temp/*/* /app/model1/ \
+    && find /app/model1_temp -type f -exec mv {} /app/model1/ \; \
     && rm -rf /app/model1_temp model1.zip \
     && curl -L -o model2.zip https://github.com/chaindmhl/BoardMate/releases/download/v1.0/model2.zip \
     && unzip model2.zip -d /app/model2_temp \
-    && mv /app/model2_temp/*/* /app/model2/ \
+    && find /app/model2_temp -type f -exec mv {} /app/model2/ \; \
     && rm -rf /app/model2_temp model2.zip
-
-
 
 
 RUN echo "MODEL1 contents:" && ls -l /app/model1
