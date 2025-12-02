@@ -4,10 +4,12 @@ set -e
 
 echo "Starting Django setup..."
 
-echo "Listing model1 contents:"
-ls -l /app/model1
-echo "Listing model2 contents:"
-ls -l /app/model2
+echo "MODEL1 contents:"
+ls -l /models/model1
+
+echo "MODEL2 contents:"
+ls -l /models/model2
+
 
 # Make migrations for any app changes
 python manage.py makemigrations
