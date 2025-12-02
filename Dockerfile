@@ -7,22 +7,28 @@ ENV PYTHONUNBUFFERED=1
 ENV PYTHONPATH="${PYTHONPATH}:/app"
 ENV DJANGO_SETTINGS_MODULE=Electronic_exam.settings
 
-# Set working directory
+# Working directory
 WORKDIR /app
 
-# Install system dependencies first
+# Install system dependencies
 RUN apt-get update && apt-get install -y \
     libgl1 libglib2.0-0 unzip curl \
     && rm -rf /var/lib/apt/lists/*
 
-# Cache bust arguments (changes force Docker to rebuild these layers)
+# -----------------------------
+# Cache-busting arguments
+# -----------------------------
+# Change these to force reinstall of Python packages or models
 ARG PYTHON_CACHEBUST=1
 ARG MODEL_CACHEBUST=1
 
-# Copy requirements and install Python packages (cache-busted)
+# Copy requirements first and install Python packages
 COPY requirements.txt /app/
 RUN echo "Cache bust: $PYTHON_CACHEBUST" \
     && pip install --no-cache-dir -r requirements.txt
+
+# Ensure django-q is installed (optional, safe)
+RUN pip install --no-cache-dir --upgrade django-q
 
 # Copy project code
 COPY . /app/
@@ -43,7 +49,7 @@ RUN mkdir -p /app/staticfiles /app/media
 # Expose port
 EXPOSE 9000
 
-# Copy entrypoint script and make it executable
+# Copy entrypoint script and make executable
 COPY entrypoint.sh /app/entrypoint.sh
 RUN chmod +x /app/entrypoint.sh
 
