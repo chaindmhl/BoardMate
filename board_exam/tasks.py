@@ -10,8 +10,10 @@ from board_exam.models import Student, Result, AnswerKey
 
 User = get_user_model()
 
-MODEL1_DIR = "/models/model1"
-MODEL2_DIR = "/models/model2"
+BASE_DIR = settings.BASE_DIR
+MODEL1_DIR = os.path.join(BASE_DIR, "model1")  # points to /app/model1
+MODEL2_DIR = os.path.join(BASE_DIR, "model2")  # points to /app/model2
+
 
 # Confidence threshold for YOLO detection
 CONF_THRESHOLD = 0.5
