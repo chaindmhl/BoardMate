@@ -49,26 +49,6 @@ from dotenv import load_dotenv
 
 logo_path = os.path.join(settings.BASE_DIR, 'static', 'boardmate1.png')  # full path
 
-# --- Load YOLO models once at server startup ---
-
-MODEL1_DIR = "model1"
-MODEL2_DIR = "model2"
-
-# Model 1 (original)
-net_original = cv2.dnn.readNet(
-    os.path.join(MODEL1_DIR, "model1.weights"),
-    os.path.join(MODEL1_DIR, "model1.cfg")
-)
-with open(os.path.join(MODEL1_DIR, "model1.names")) as f:
-    classes_original = [line.strip() for line in f.readlines()]
-
-# Model 2 (cropped)
-net_cropped = cv2.dnn.readNet(
-    os.path.join(MODEL2_DIR, "model2.weights"),
-    os.path.join(MODEL2_DIR, "model2.cfg")
-)
-with open(os.path.join(MODEL2_DIR, "model2.names")) as f:
-    classes_cropped = [line.strip() for line in f.readlines()]
 
 ####################### FOR SIGNING UP ##############################
 
