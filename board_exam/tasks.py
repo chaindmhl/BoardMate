@@ -62,6 +62,10 @@ def run_yolo_inference(net, image):
             confidence = scores[class_id]
             if confidence > CONF_THRESHOLD:
                 detected_classes.append(class_id)
+    
+    print("Detected class IDs:", detected_classes)
+    print("Corresponding names:", [classes[class_id] for class_id in detected_classes if class_id < len(classes)])
+
     return detected_classes
 
 def process_uploaded_answer(relative_image_path, exam_id, user_id):
