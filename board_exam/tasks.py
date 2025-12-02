@@ -14,8 +14,9 @@ MODEL2_DIR = "/models/model2"
 # Confidence threshold for YOLO detection
 CONF_THRESHOLD = 0.5
 
-# Dictionary to cache models per worker
+# Store models per worker to avoid reloading each task
 _worker_models = {}
+
 
 def load_yolo_model(model_dir, cfg_name, weights_name, names_name):
     """Load YOLO model and class names given exact filenames"""
@@ -35,11 +36,9 @@ def load_yolo_model(model_dir, cfg_name, weights_name, names_name):
 
     return net, classes
 
+
 def get_worker_models():
-    """
-    Load YOLO models once per worker (singleton).
-    Ensures safe loading in Django-Q workers.
-    """
+    """Lazy-load models for the current worker"""
     if not _worker_models:
         _worker_models["original"], _worker_models["original_classes"] = load_yolo_model(
             MODEL1_DIR, "model1.cfg", "model1.weights", "model1.names"
@@ -49,7 +48,8 @@ def get_worker_models():
         )
     return _worker_models
 
-def run_yolo_inference(net, image, classes):
+
+def run_yolo_inference(net, classes, image):
     """Run YOLO detection and return detected classes"""
     height, width = image.shape[:2]
     blob = cv2.dnn.blobFromImage(image, 1/255.0, (416, 416), swapRB=True, crop=False)
@@ -65,11 +65,12 @@ def run_yolo_inference(net, image, classes):
             confidence = scores[class_id]
             if confidence > CONF_THRESHOLD:
                 detected_classes.append(class_id)
-    
+
     print("Detected class IDs:", detected_classes)
-    print("Corresponding names:", [classes[class_id] for class_id in detected_classes if class_id < len(classes)])
+    print("Corresponding names:", [classes[cid] for cid in detected_classes if cid < len(classes)])
 
     return detected_classes
+
 
 def process_uploaded_answer(relative_image_path, exam_id, user_id):
     """
@@ -78,7 +79,7 @@ def process_uploaded_answer(relative_image_path, exam_id, user_id):
     - Computes score
     - Saves result to the DB
     """
-    # Load models safely inside the worker
+    # Lazy-load models inside worker
     models = get_worker_models()
     net_original = models["original"]
     classes_original = models["original_classes"]
@@ -97,11 +98,10 @@ def process_uploaded_answer(relative_image_path, exam_id, user_id):
         return
 
     # Run YOLO inference
-    original_detections = run_yolo_inference(net_original, image, classes_original)
-    cropped_detections = run_yolo_inference(net_cropped, image, classes_cropped)
+    original_detections = run_yolo_inference(net_original, classes_original, image)
+    cropped_detections = run_yolo_inference(net_cropped, classes_cropped, image)
 
     # Compute a simple score: count matches vs AnswerKey
-    # (replace with your actual scoring logic)
     score = len(cropped_detections)  # Example: number of cropped items detected
 
     # Load user and student
