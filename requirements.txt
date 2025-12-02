@@ -15,4 +15,5 @@ openai
 python-dotenv
 gunicorn
 whitenoise
+opencv-contrib-python-headless==4.5.5.64
 
