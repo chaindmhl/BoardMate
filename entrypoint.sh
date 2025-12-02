@@ -4,6 +4,9 @@ set -e
 
 echo "Starting Django setup..."
 
+# Make migrations for any app changes
+python manage.py makemigrations
+
 # Apply database migrations
 python manage.py migrate
 
