@@ -30,15 +30,15 @@ HOST = os.getenv("HOST")
 ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "localhost").split(",")
 
 Q_CLUSTER = {
-    'name': 'boardmate',
-    'workers': 2,          # number of background workers
-    'recycle': 500,
-    'timeout': 3600,       # max task time
-    'retry': 3,
+    'name': 'BoardMate',
+    'workers': 4,
+    'timeout': 60,   # seconds per task
+    'retry': 120,    # must be larger than timeout
     'queue_limit': 50,
     'bulk': 10,
-    'orm': 'default'       # use Django ORM for task queue
+    'orm': 'default',
 }
+
 
 
 
