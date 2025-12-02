@@ -30,11 +30,14 @@ COPY . /app/
 # Download and unzip YOLO models
 RUN mkdir -p /app/model1 /app/model2 \
     && curl -L -o model1.zip https://github.com/chaindmhl/BoardMate/releases/download/v1.0/model1.zip \
-    && unzip -j model1.zip -d /app/model1 \
-    && rm model1.zip \
+    && unzip model1.zip -d /app/model1_temp \
+    && mv /app/model1_temp/*/* /app/model1/ \
+    && rm -rf /app/model1_temp model1.zip \
     && curl -L -o model2.zip https://github.com/chaindmhl/BoardMate/releases/download/v1.0/model2.zip \
-    && unzip -j model2.zip -d /app/model2 \
-    && rm model2.zip
+    && unzip model2.zip -d /app/model2_temp \
+    && mv /app/model2_temp/*/* /app/model2/ \
+    && rm -rf /app/model2_temp model2.zip
+
 
 
 
