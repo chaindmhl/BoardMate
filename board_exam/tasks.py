@@ -10,9 +10,8 @@ from board_exam.models import Student, Result, AnswerKey
 
 User = get_user_model()
 
-BASE_DIR = settings.BASE_DIR
-MODEL1_DIR = os.path.join(BASE_DIR, "model1")  # points to /app/model1
-MODEL2_DIR = os.path.join(BASE_DIR, "model2")  # points to /app/model2
+MODEL1_DIR = "/models/model1"
+MODEL2_DIR = "/models/model2"
 
 
 # Confidence threshold for YOLO detection
@@ -45,6 +44,7 @@ NET_ORIGINAL, CLASSES_ORIGINAL = load_yolo_model(
 NET_CROPPED, CLASSES_CROPPED = load_yolo_model(
     MODEL2_DIR, "model2.cfg", "model2.weights", "model2.names"
 )
+
 
 def run_yolo_inference(net, image):
     """Run YOLO detection and return detected classes"""
