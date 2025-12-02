@@ -48,12 +48,27 @@ from dotenv import load_dotenv
 
 
 logo_path = os.path.join(settings.BASE_DIR, 'static', 'boardmate1.png')  # full path
-# SET_ID_PREFIX = {
-#     "Civil Engineering": "CE",
-#     "Mechanical Engineering": "ME",
-#     "Electronics Engineering": "ECE",
-#     "Electrical Engineering": "EE",
-# }
+
+# --- Load YOLO models once at server startup ---
+
+MODEL1_DIR = "model1"
+MODEL2_DIR = "model2"
+
+# Model 1 (original)
+net_original = cv2.dnn.readNet(
+    os.path.join(MODEL1_DIR, "model1.weights"),
+    os.path.join(MODEL1_DIR, "model1.cfg")
+)
+with open(os.path.join(MODEL1_DIR, "model1.names")) as f:
+    classes_original = [line.strip() for line in f.readlines()]
+
+# Model 2 (cropped)
+net_cropped = cv2.dnn.readNet(
+    os.path.join(MODEL2_DIR, "model2.weights"),
+    os.path.join(MODEL2_DIR, "model2.cfg")
+)
+with open(os.path.join(MODEL2_DIR, "model2.names")) as f:
+    classes_cropped = [line.strip() for line in f.readlines()]
 
 ####################### FOR SIGNING UP ##############################
 
@@ -1258,24 +1273,24 @@ def upload_answer(request):
         # Save the mask as an image with the unique filename
         cv2.imwrite(os.path.join(directory, unique_filename), mask)
         # Specify the path to YOLOv4 models and class names files
-        model1_weights_path = "model1/model1.weights"
-        model1_cfg_path = "model1/model1.cfg"
-        model1_names_path = "model1/model1.names"
+        # model1_weights_path = "model1/model1.weights"
+        # model1_cfg_path = "model1/model1.cfg"
+        # model1_names_path = "model1/model1.names"
 
-        model2_weights_path = "model2/model2.weights"
-        model2_cfg_path = "model2/model2.cfg"
-        model2_names_path = "model2/model2.names"
+        # model2_weights_path = "model2/model2.weights"
+        # model2_cfg_path = "model2/model2.cfg"
+        # model2_names_path = "model2/model2.names"
 
-        # Load YOLOv4 models and class names
-        net_original = cv2.dnn.readNet(model1_weights_path, model1_cfg_path)
-        classes_original = []
-        with open(model1_names_path, "r") as f:
-            classes_original = [line.strip() for line in f.readlines()]
+        # # Load YOLOv4 models and class names
+        # # net_original = cv2.dnn.readNet(model1_weights_path, model1_cfg_path)
+        # classes_original = []
+        # with open(model1_names_path, "r") as f:
+        #     classes_original = [line.strip() for line in f.readlines()]
 
-        net_cropped = cv2.dnn.readNet(model2_weights_path, model2_cfg_path)
-        classes_cropped = []
-        with open(model2_names_path, "r") as f:
-            classes_cropped = [line.strip() for line in f.readlines()]
+        # net_cropped = cv2.dnn.readNet(model2_weights_path, model2_cfg_path)
+        # classes_cropped = []
+        # with open(model2_names_path, "r") as f:
+        #     classes_cropped = [line.strip() for line in f.readlines()]
 
         # Specify the reference point from which to measure the distance
         reference_point = (0, 0)  # Example point, you should specify your desired point here
