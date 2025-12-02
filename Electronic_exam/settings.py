@@ -29,6 +29,18 @@ HOST = os.getenv("HOST")
 
 ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "localhost").split(",")
 
+Q_CLUSTER = {
+    'name': 'boardmate',
+    'workers': 2,          # number of background workers
+    'recycle': 500,
+    'timeout': 3600,       # max task time
+    'retry': 3,
+    'queue_limit': 50,
+    'bulk': 10,
+    'orm': 'default'       # use Django ORM for task queue
+}
+
+
 
 # Application definition
 
@@ -41,6 +53,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework',
     'board_exam',
+    'django-q',
 ]
 
 MIDDLEWARE = [
