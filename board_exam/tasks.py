@@ -18,20 +18,33 @@ MODEL2_DIR = os.path.join(BASE_DIR, "model2")
 # Confidence threshold for YOLO detection
 CONF_THRESHOLD = 0.5
 
-def load_yolo_model(model_dir):
-    """Load YOLO model and class names"""
-    net = cv2.dnn.readNet(
-        os.path.join(model_dir, os.listdir(model_dir)[1]),  # .weights
-        os.path.join(model_dir, os.listdir(model_dir)[0])   # .cfg
-    )
-    names_file = [f for f in os.listdir(model_dir) if f.endswith(".names")][0]
-    with open(os.path.join(model_dir, names_file)) as f:
+def load_yolo_model(model_dir, cfg_name, weights_name, names_name):
+    """Load YOLO model and class names given exact filenames"""
+    cfg_file = os.path.join(model_dir, cfg_name)
+    weights_file = os.path.join(model_dir, weights_name)
+    names_file = os.path.join(model_dir, names_name)
+
+    # Check if files exist
+    for f in [cfg_file, weights_file, names_file]:
+        if not os.path.exists(f):
+            raise FileNotFoundError(f"YOLO model file missing: {f}")
+
+    net = cv2.dnn.readNet(weights_file, cfg_file)
+
+    with open(names_file) as f:
         classes = f.read().strip().split("\n")
+
     return net, classes
 
-# Load YOLO models once
-NET_ORIGINAL, CLASSES_ORIGINAL = load_yolo_model(MODEL1_DIR)
-NET_CROPPED, CLASSES_CROPPED = load_yolo_model(MODEL2_DIR)
+
+# Load both models
+NET_ORIGINAL, CLASSES_ORIGINAL = load_yolo_model(
+    MODEL1_DIR, "model1.cfg", "model1.weights", "model1.names"
+)
+
+NET_CROPPED, CLASSES_CROPPED = load_yolo_model(
+    MODEL2_DIR, "model2.cfg", "model2.weights", "model2.names"
+)
 
 def run_yolo_inference(net, image):
     """Run YOLO detection and return detected classes"""
