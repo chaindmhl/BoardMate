@@ -12,7 +12,10 @@ RUN apt-get update && apt-get install -y libgl1 libglib2.0-0 unzip curl \
 
 # Copy requirements and install all Python packages
 COPY requirements.txt /app/
-RUN pip install --no-cache-dir -r requirements.txt
+ARG PYTHON_CACHEBUST=1
+RUN echo "Cache bust: $PYTHON_CACHEBUST" \
+    && pip install --no-cache-dir -r requirements.txt
+
 
 # Copy project files
 COPY . /app/
