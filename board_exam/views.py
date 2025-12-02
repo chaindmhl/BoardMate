@@ -1229,19 +1229,29 @@ def upload_answer(request):
         exam_id = request.POST.get('exam_id')
         user_id = request.user.id
 
-        # Save uploaded file
-        filename = f"uploads/{int(time.time())}_{uuid.uuid4()}.jpg"
-        os.makedirs("uploads", exist_ok=True)
-        with open(filename, 'wb') as f:
+        # SAVE INSIDE MEDIA_ROOT/answers/
+        save_dir = os.path.join(settings.MEDIA_ROOT, "answers")
+        os.makedirs(save_dir, exist_ok=True)
+
+        filename = f"{int(time.time())}_{uuid.uuid4()}.jpg"
+        full_path = os.path.join(save_dir, filename)
+
+        with open(full_path, 'wb') as f:
             for chunk in uploaded_image.chunks():
                 f.write(chunk)
 
-        # Queue the heavy YOLO processing task
-        async_task("board_exam.tasks.process_uploaded_answer", filename, exam_id, user_id)
+        # Queue processing with RELATIVE path
+        relative_path = f"answers/{filename}"
 
-        # Immediately return a response
-        return JsonResponse({"status": "processing", "message": "Your answer is being processed."})
-    
+        async_task(
+            "board_exam.tasks.process_uploaded_answer",
+            relative_path,   # <-- FIXED
+            exam_id,
+            user_id
+        )
+
+        return JsonResponse({"status": "processing"})
+
     return render(request, "upload_answer.html")
 
 def answer_sheet_view(request):
