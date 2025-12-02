@@ -35,12 +35,6 @@ RUN mkdir -p /models/model1 /models/model2 \
     && echo "MODEL2 contents:" && ls -l /models/model2
 
 
-
-
-RUN echo "MODEL1 contents:" && ls -l /app/model1
-RUN echo "MODEL2 contents:" && ls -l /app/model2
-
-
 # Create directories
 RUN mkdir -p /app/staticfiles /app/media
 
