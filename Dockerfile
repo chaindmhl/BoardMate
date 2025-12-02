@@ -15,15 +15,21 @@ RUN apt-get update && apt-get install -y \
     libgl1 libglib2.0-0 unzip curl \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy requirements and install Python packages
+# Cache bust arguments (changes force Docker to rebuild these layers)
+ARG PYTHON_CACHEBUST=1
+ARG MODEL_CACHEBUST=1
+
+# Copy requirements and install Python packages (cache-busted)
 COPY requirements.txt /app/
-RUN pip install --no-cache-dir -r requirements.txt
+RUN echo "Cache bust: $PYTHON_CACHEBUST" \
+    && pip install --no-cache-dir -r requirements.txt
 
 # Copy project code
 COPY . /app/
 
-# Download YOLO models
-RUN mkdir -p /app/model1 /app/model2 \
+# Download YOLO models (cache-busted)
+RUN echo "Model cache bust: $MODEL_CACHEBUST" \
+    && mkdir -p /app/model1 /app/model2 \
     && curl -L -o model1.zip https://github.com/chaindmhl/BoardMate/releases/download/v1.0/model1.zip \
     && unzip -j model1.zip -d model1 \
     && rm model1.zip \
