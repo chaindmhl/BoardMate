@@ -6,7 +6,9 @@ from django.conf import settings
 from django.shortcuts import get_object_or_404
 from board_exam.models import Result, Student, AnswerKey
 
-COLAB_URL = settings.COLAB_URL  # Set to your ngrok public URL + "/process_answer"
+COLAB_URL = settings.COLAB_URL  # ngrok public URL + "/process_answer"
+MAX_RETRIES = 3
+RETRY_DELAY = 2  # seconds
 
 def process_uploaded_answer(user_id, exam_id, image_path, *args, **kwargs):
     start_time = time.time()
@@ -21,23 +23,29 @@ def process_uploaded_answer(user_id, exam_id, image_path, *args, **kwargs):
     answer_key = get_object_or_404(AnswerKey, set_id=exam_id)
     correct_answers = {str(k): v['letter'] for k, v in answer_key.answer_key.items()}
 
-    with open(image_path, "rb") as f:
-        files = {"image": f}
-        data = {"exam_id": exam_id, "user_id": user_id, "correct_answers": correct_answers}
+    for attempt in range(1, MAX_RETRIES+1):
         try:
-            response = requests.post(COLAB_URL, files=files, data=data)
-            response.raise_for_status()
-        except requests.RequestException as e:
-            print(f"[ERROR] Failed to send image to Colab: {str(e)}")
-            return {"error": f"Failed to process image: {str(e)}"}
+            with open(image_path, "rb") as f:
+                files = {"image": f}
+                data = {"exam_id": exam_id, "user_id": user_id, "correct_answers": correct_answers}
+                response = requests.post(COLAB_URL, files=files, data=data, timeout=30)
+                response.raise_for_status()
 
-    result_data = response.json()
+            result_data = response.json()
+            if "error" in result_data:
+                raise Exception(result_data["error"])  # Raise to retry
+            break  # success, exit retry loop
+
+        except Exception as e:
+            print(f"[ERROR] Attempt {attempt} failed: {str(e)}")
+            if attempt < MAX_RETRIES:
+                print(f"[INFO] Retrying in {RETRY_DELAY}s...")
+                time.sleep(RETRY_DELAY)
+            else:
+                return {"error": f"Failed to process image after {MAX_RETRIES} attempts: {str(e)}"}
+
     elapsed = round(time.time() - start_time, 2)
-
-    submitted_answers = []
-    if "submitted_answers" in result_data:
-        submitted_answers = [v["letter"] for v in result_data["submitted_answers"].values()]
-
+    submitted_answers = [v["letter"] for v in result_data.get("submitted_answers", {}).values()]
     score = result_data.get("score", 0)
     total_items = result_data.get("total_items", len(correct_answers))
 
