@@ -23,7 +23,11 @@ def process_uploaded_answer(user_id, exam_id, image_path, *args, **kwargs):
 
     with open(image_path, "rb") as f:
         files = {"image": f}
-        data = {"exam_id": exam_id, "user_id": user_id, "correct_answers": correct_answers}
+        data = {
+                "exam_id": exam_id,
+                "user_id": user_id,
+                "correct_answers": json.dumps(correct_answers)  # <-- send as JSON string
+            }
         try:
             response = requests.post(COLAB_URL, files=files, data=data, timeout=60)  # increase timeout
             response.raise_for_status()
