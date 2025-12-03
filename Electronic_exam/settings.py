@@ -30,16 +30,16 @@ HOST = os.getenv("HOST")
 ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "localhost").split(",")
 
 Q_CLUSTER = {
-    "name": "DjangoQ",
-    "workers": 1,               # one worker is safer for big models
-    "recycle": 0,
-    "timeout": 300,
-    "retry": 120,
-    "queue_limit": 50,
-    "bulk": 1,
-    "orm": "default",
-    "cluster": "thread",        # IMPORTANT FIX
+    'name': 'DjangoQ',
+    'workers': 4,
+    'recycle': 500,
+    'timeout': 120,  # max seconds a task can run
+    'retry': 300,    # retry after X seconds if task fails
+    'queue_limit': 50,
+    'bulk': 10,
+    'orm': 'default',
 }
+
 
 
 
