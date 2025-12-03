@@ -6,39 +6,24 @@ from django.conf import settings
 from django.shortcuts import get_object_or_404
 from board_exam.models import Result, Student, AnswerKey
 
-COLAB_URL = settings.COLAB_URL + "/process_answer"
+COLAB_URL = settings.COLAB_URL  # Set to your ngrok public URL + "/process_answer"
 
 def process_uploaded_answer(user_id, exam_id, image_path, *args, **kwargs):
-    """
-    Sends the uploaded answer image to Colab for processing,
-    then stores the result in the database.
-    """
     start_time = time.time()
     print("[TASK] Started process_uploaded_answer")
     print(f"[TASK] user_id={user_id}, exam_id={exam_id}, image_path={image_path}")
 
-    # Ensure user_id is int
-    try:
-        user_id = int(user_id)
-    except ValueError:
-        print(f"[ERROR] user_id is not an integer: {user_id}")
-        return {"error": "Invalid user_id"}
-
-    # Check if image exists
     if not os.path.exists(image_path):
         print(f"[ERROR] Image file not found: {image_path}")
         return {"error": "Image file does not exist"}
 
-    # Fetch student
     student = get_object_or_404(Student, user_id=user_id)
-
-    # Fetch answer key
     answer_key = get_object_or_404(AnswerKey, set_id=exam_id)
+    correct_answers = {str(k): v['letter'] for k, v in answer_key.answer_key.items()}
 
-    # Send image to Colab
     with open(image_path, "rb") as f:
         files = {"image": f}
-        data = {"exam_id": exam_id, "user_id": user_id}
+        data = {"exam_id": exam_id, "user_id": user_id, "correct_answers": correct_answers}
         try:
             response = requests.post(COLAB_URL, files=files, data=data)
             response.raise_for_status()
@@ -46,34 +31,16 @@ def process_uploaded_answer(user_id, exam_id, image_path, *args, **kwargs):
             print(f"[ERROR] Failed to send image to Colab: {str(e)}")
             return {"error": f"Failed to process image: {str(e)}"}
 
-    # After getting response from Colab
     result_data = response.json()
-    
-    ## Calculate elapsed time
     elapsed = round(time.time() - start_time, 2)
-    
-    # Ensure submitted_answers is always a list
-    submitted_answers = result_data.get("submitted_answers")
-    if submitted_answers is None:
-        submitted_answers = []
-    elif isinstance(submitted_answers, dict):
-        # convert dict values to a list of letters
-        submitted_answers = [v.get("letter") for v in submitted_answers.values() if "letter" in v]
-    elif not isinstance(submitted_answers, list):
-        submitted_answers = []
-    
-    # Compute score using parsed answers
-    score = 0
-    for i, ans in enumerate(submitted_answers):
-        if i < len(correct_list) and ans == correct_list[i]:
-            score += 1
 
-    
-    # Correct answers from AnswerKey
-    correct_answers = answer_key.answer_key
-    correct_list = [v["letter"] for v in correct_answers.values()] if isinstance(correct_answers, dict) else list(correct_answers)
-    
-    # Save or update Result
+    submitted_answers = []
+    if "submitted_answers" in result_data:
+        submitted_answers = [v["letter"] for v in result_data["submitted_answers"].values()]
+
+    score = result_data.get("score", 0)
+    total_items = result_data.get("total_items", len(correct_answers))
+
     Result.objects.update_or_create(
         user_id=user_id,
         exam_id=exam_id,
@@ -82,15 +49,14 @@ def process_uploaded_answer(user_id, exam_id, image_path, *args, **kwargs):
             "course": student.course,
             "student_name": f"{student.last_name}, {student.first_name} {student.middle_name or ''}".strip(),
             "subject": answer_key.subject,
-            "answer": submitted_answers,  # <-- this ensures database gets the list
-            "correct_answer": correct_list,
+            "answer": submitted_answers,
+            "correct_answer": list(correct_answers.values()),
             "score": score,
             "is_submitted": True,
-            "total_items": len(correct_list),
+            "total_items": total_items,
             "elapsed_time": str(elapsed)
         }
     )
-    
-    print(f"[TASK] Finished processing user_id={user_id} exam_id={exam_id}, score={score}, elapsed_time={elapsed}s")
 
+    print(f"[TASK] Finished processing user_id={user_id} exam_id={exam_id}, score={score}, elapsed_time={elapsed}s")
     return {"score": score, "submitted_answers": submitted_answers, "elapsed_time": elapsed}
