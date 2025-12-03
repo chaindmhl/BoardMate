@@ -1222,27 +1222,24 @@ def download_exam_results(request):
 #     return mask
 
 from django_q.tasks import async_task
+from board_exam.tasks import process_uploaded_answer
 
 def upload_answer(request):
     if request.method == 'POST' and request.FILES.get('image'):
-        uploaded_image = request.FILES['image']
         exam_id = request.POST.get('exam_id')
-        user_id = request.user.id
-        answer_key = get_object_or_404(AnswerKey, set_id=exam_id)
+        uploaded_image = request.FILES['image']
 
-        correct_answers = {str(k): v['letter'] for k, v in answer_key.answer_key.items()}
-
-        # Save file temporarily
-        file_path = f'/tmp/{uploaded_image.name}'
-        with open(file_path, 'wb+') as f:
+        # Save uploaded image locally first (temporary)
+        image_path = f'/tmp/{uploaded_image.name}'
+        with open(image_path, 'wb+') as f:
             for chunk in uploaded_image.chunks():
                 f.write(chunk)
 
-        # Enqueue Django-Q task
-        async_task('board_exam.tasks.process_uploaded_answer',
-                   file_path, exam_id, user_id, correct_answers)
+        # Enqueue the background task to process in Colab
+        async_task('board_exam.tasks.process_uploaded_answer', request.user.id, exam_id, image_path)
 
-        return JsonResponse({'status': 'Processing started'})
+        return JsonResponse({'message': 'Answer uploaded. Processing in background.'})
+
     return render(request, 'upload_answer.html')
 
 
