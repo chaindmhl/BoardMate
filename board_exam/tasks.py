@@ -62,7 +62,12 @@ def process_uploaded_answer(user_id, exam_id, image_path, *args, **kwargs):
     elif not isinstance(submitted_answers, list):
         submitted_answers = []
     
-    score = result_data.get("score", 0)
+    # Compute score using parsed answers
+    score = 0
+    for i, ans in enumerate(submitted_answers):
+        if i < len(correct_list) and ans == correct_list[i]:
+            score += 1
+
     
     # Correct answers from AnswerKey
     correct_answers = answer_key.answer_key
