@@ -1230,14 +1230,12 @@ def upload_answer(request):
         exam_id = request.POST.get("exam_id")
         user = request.user
 
-        if not exam_id:
-            return JsonResponse({"error": "Exam ID is required."}, status=400)
+        # Ensure exam_id is string
+        exam_id = str(exam_id)
 
-        # Create temporary directory for uploads
+        # Save uploaded image to a temporary path
         tmp_dir = os.path.join("media", "tmp_uploads")
         os.makedirs(tmp_dir, exist_ok=True)
-
-        # Save file with user_id + exam_id for uniqueness
         tmp_path = os.path.join(tmp_dir, f"{user.id}_{exam_id}.jpg")
         with open(tmp_path, "wb") as f:
             for chunk in uploaded_image.chunks():
@@ -1247,12 +1245,12 @@ def upload_answer(request):
         if Result.objects.filter(user=user, exam_id=exam_id).exists():
             return JsonResponse({"warning": "An answer is already uploaded for this exam."})
 
-        # Enqueue background task safely
+        # Enqueue background task with positional arguments
         async_task(
             "board_exam.tasks.process_uploaded_answer",
-            user.id,          # int
-            str(exam_id),     # str
-            tmp_path          # str
+            user.id,      # must be integer
+            exam_id,      # string
+            tmp_path      # image path
         )
 
         return JsonResponse({"message": "Answer uploaded successfully. Processing in background."})
