@@ -1230,34 +1230,23 @@ def upload_answer(request):
         exam_id = request.POST.get('exam_id')
         user_id = request.user.id
 
-        # Make sure uploads directory exists
+        # Save uploaded image
         upload_dir = os.path.join(settings.MEDIA_ROOT, "uploads")
         os.makedirs(upload_dir, exist_ok=True)
-
-        # Generate unique filename
         filename = f"{int(time.time())}_{uuid.uuid4().hex}.jpg"
         file_path = os.path.join(upload_dir, filename)
-
-        # Save file manually
         with open(file_path, 'wb') as f:
             for chunk in uploaded_image.chunks():
                 f.write(chunk)
 
-        # Relative path -> this is what Celery or Django-Q will receive
         relative_path = os.path.join("uploads", filename)
 
-        # Queue your long-running process
-        async_task(
-            "board_exam.tasks.process_uploaded_answer",
-            relative_path,  # image path
-            exam_id,
-            user_id
-        )
+        # Queue Colab processing task
+        async_task("board_exam.tasks.process_uploaded_answer", relative_path, exam_id, user_id)
 
         return JsonResponse({
             "status": "processing",
-            "message": "Your answer is being processed. Please wait.",
-            "filename": filename
+            "message": "Your answer is being processed."
         })
 
     return render(request, "upload_answer.html")
