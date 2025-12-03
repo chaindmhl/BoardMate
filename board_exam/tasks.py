@@ -40,13 +40,13 @@ def process_uploaded_answer(user_id, exam_id, image_path):
         defaults={
             "student_id": student.student_id,
             "course": student.course,
-            "student_name": student.full_name,
+            "student_name": f"{student.last_name}, {student.first_name} {student.middle_name}",
             "subject": answer_key.subject,
             "answer": submitted_answers,
-            "correct_answer": correct_answers,
+            "correct_answer": list(correct_answers.values()),
             "score": score,
             "is_submitted": True,
-            "total_items": len(correct_answers),
+            "total_items": len(correct_answers)
         }
     )
 
