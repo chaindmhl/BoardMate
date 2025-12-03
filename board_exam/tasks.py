@@ -46,29 +46,25 @@ def process_uploaded_answer(user_id, exam_id, image_path, *args, **kwargs):
             print(f"[ERROR] Failed to send image to Colab: {str(e)}")
             return {"error": f"Failed to process image: {str(e)}"}
 
+    # After getting response from Colab
     result_data = response.json()
-
-    # Ensure submitted_answers is always a list
-    submitted_answers = result_data.get("submitted_answers")
-    if submitted_answers is None:
-        submitted_answers = []
-    elif isinstance(submitted_answers, dict):
-        # convert dict values to a list
-        submitted_answers = [v.get("letter") for v in submitted_answers.values() if "letter" in v]
-    elif not isinstance(submitted_answers, list):
-        # fallback to empty list if format is unknown
-        submitted_answers = []
-
-    # Score from Colab
-    score = result_data.get("score", 0)
-
+    
+    # Use submitted_answers directly as list
+    submitted_answers = result_data.get("submitted_answers", [])
+    if not isinstance(submitted_answers, list):
+        submitted_answers = list(submitted_answers)  # fallback
+    
     # Correct answers from AnswerKey
     correct_answers = answer_key.answer_key
     correct_list = [v["letter"] for v in correct_answers.values()] if isinstance(correct_answers, dict) else list(correct_answers)
-
-    # Calculate elapsed time
-    elapsed = round(time.time() - start_time, 2)
-
+    
+    # Recalculate score in Django to ensure consistency
+    score = 0
+    for idx, submitted in enumerate(submitted_answers, start=1):
+        correct = correct_list[idx - 1] if idx <= len(correct_list) else None
+        if correct and submitted == correct:
+            score += 1
+    
     # Save or update result
     Result.objects.update_or_create(
         user_id=user_id,
@@ -78,12 +74,12 @@ def process_uploaded_answer(user_id, exam_id, image_path, *args, **kwargs):
             "course": student.course,
             "student_name": f"{student.last_name}, {student.first_name} {student.middle_name or ''}".strip(),
             "subject": answer_key.subject,
-            "answer": submitted_answers,
+            "answer": submitted_answers,  # save actual submitted answers
             "correct_answer": correct_list,
             "score": score,
             "is_submitted": True,
             "total_items": len(correct_list),
-            "elapsed_time": str(elapsed)
+            "elapsed_time": str(round(time.time() - start_time, 2))
         }
     )
 
