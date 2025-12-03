@@ -1,20 +1,20 @@
 #!/bin/bash
-# Exit immediately if a command fails
 set -e
 
-echo "Starting Django setup..."
-
-# Make migrations for any app changes
-python manage.py makemigrations
-
-# Apply database migrations
+# 1. Apply migrations
+echo "Applying migrations..."
 python manage.py migrate
 
-# Collect static files
+# 2. Collect static files (optional)
+echo "Collecting static files..."
 python manage.py collectstatic --noinput
 
-echo "Starting Background Worker (Django-Q)..."
+# 3. Start Django Q cluster in the background
+echo "Starting Django Q cluster..."
 python manage.py qcluster &
 
+# 4. Start Gunicorn
 echo "Starting Gunicorn..."
-gunicorn Electronic_exam.wsgi:application --bind 0.0.0.0:9000
+exec gunicorn Electronic_exam.wsgi:application \
+    --bind 0.0.0.0:9000 \
+    --workers 3
