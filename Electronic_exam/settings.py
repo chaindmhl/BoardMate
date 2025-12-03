@@ -30,14 +30,17 @@ HOST = os.getenv("HOST")
 ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "localhost").split(",")
 
 Q_CLUSTER = {
-    'name': 'BoardMate',
-    'workers': 4,
-    'timeout': 60,   # seconds per task
-    'retry': 120,    # must be larger than timeout
-    'queue_limit': 50,
-    'bulk': 10,
-    'orm': 'default',
+    "name": "DjangoQ",
+    "workers": 1,               # one worker is safer for big models
+    "recycle": 0,
+    "timeout": 300,
+    "retry": 120,
+    "queue_limit": 50,
+    "bulk": 1,
+    "orm": "default",
+    "cluster": "thread",        # IMPORTANT FIX
 }
+
 
 
 
