@@ -1230,25 +1230,29 @@ def upload_answer(request):
         exam_id = request.POST.get('exam_id')
         user_id = request.user.id
 
-        # Save uploaded image
+        # Create uploads folder if it doesn't exist
         upload_dir = os.path.join(settings.MEDIA_ROOT, "uploads")
         os.makedirs(upload_dir, exist_ok=True)
+
+        # Save uploaded image with unique filename
         filename = f"{int(time.time())}_{uuid.uuid4().hex}.jpg"
         file_path = os.path.join(upload_dir, filename)
         with open(file_path, 'wb') as f:
             for chunk in uploaded_image.chunks():
                 f.write(chunk)
 
+        # Relative path for task
         relative_path = os.path.join("uploads", filename)
 
-        # Queue Colab processing task
+        # Queue the Colab processing task
         async_task("board_exam.tasks.process_uploaded_answer", relative_path, exam_id, user_id)
 
         return JsonResponse({
             "status": "processing",
-            "message": "Your answer is being processed."
+            "message": "Your answer has been uploaded and is being processed."
         })
 
+    # GET request or no file
     return render(request, "upload_answer.html")
 
 def answer_sheet_view(request):
