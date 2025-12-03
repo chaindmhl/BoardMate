@@ -1224,6 +1224,19 @@ def download_exam_results(request):
 from django_q.tasks import async_task
 from board_exam.tasks import process_uploaded_answer
 
+def check_score(request):
+    user = request.user
+    exam_id = request.GET.get("exam_id")
+
+    try:
+        result = Result.objects.get(user=user, exam_id=exam_id)
+        if result.is_submitted:
+            return JsonResponse({"score": result.score})
+        else:
+            return JsonResponse({"score": None})  # Task not finished yet
+    except Result.DoesNotExist:
+        return JsonResponse({"score": None})
+
 def upload_answer(request):
     if request.method == "POST" and request.FILES.get("image"):
         uploaded_image = request.FILES["image"]
