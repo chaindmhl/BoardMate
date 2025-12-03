@@ -55,6 +55,7 @@ urlpatterns = [
     path('practice/result/<uuid:session_id>/', views.practice_result_page, name='practice_result_page'),
     path('answer-test-preview/<subject>/<board_exam>/<set_a_id>/<set_b_id>/', views.answer_test_preview, name='answer_test_preview'),
     path('analytics/', views.analytics_dashboard, name='analytics_dashboard'),
+    path('check_score/', views.check_score, name='check_score'),
 
 ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
 
