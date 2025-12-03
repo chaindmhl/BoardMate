@@ -1225,34 +1225,37 @@ from django_q.tasks import async_task
 
 
 def upload_answer(request):
-    if request.method == 'POST' and request.FILES.get('image'):
-        uploaded_image = request.FILES['image']
-        exam_id = request.POST.get('exam_id')
+    if request.method == "POST" and request.FILES.get("image"):
+        uploaded_image = request.FILES["image"]
+        exam_id = request.POST.get("exam_id")
         user_id = request.user.id
 
-        # Create uploads folder if it doesn't exist
+        # Original filename from user's computer
+        original_filename = uploaded_image.name
+        print("Uploaded file from user:", original_filename)
+
+        # Create uploads folder
         upload_dir = os.path.join(settings.MEDIA_ROOT, "uploads")
         os.makedirs(upload_dir, exist_ok=True)
 
-        # Save uploaded image with unique filename
-        filename = f"{int(time.time())}_{uuid.uuid4().hex}.jpg"
+        # Save with unique filename to avoid collisions
+        filename = f"{int(time.time())}_{uuid.uuid4().hex}_{original_filename}"
         file_path = os.path.join(upload_dir, filename)
-        with open(file_path, 'wb') as f:
+        with open(file_path, "wb") as f:
             for chunk in uploaded_image.chunks():
                 f.write(chunk)
 
-        # Relative path for task
+        # Relative path to pass to task
         relative_path = os.path.join("uploads", filename)
 
-        # Queue the Colab processing task
+        # Queue background task
         async_task("board_exam.tasks.process_uploaded_answer", relative_path, exam_id, user_id)
 
         return JsonResponse({
             "status": "processing",
-            "message": "Your answer has been uploaded and is being processed."
+            "message": f"Your answer '{original_filename}' is being processed."
         })
 
-    # GET request or no file
     return render(request, "upload_answer.html")
 
 def answer_sheet_view(request):
