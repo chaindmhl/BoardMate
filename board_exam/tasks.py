@@ -47,7 +47,19 @@ def process_uploaded_answer(user_id, exam_id, image_path):
             return {"error": f"Failed to process image: {str(e)}"}
 
     result_data = response.json()
-    submitted_answers = result_data.get("submitted_answers", [])
+
+    # Ensure submitted_answers is always a list
+    submitted_answers = result_data.get("submitted_answers")
+    if submitted_answers is None:
+        submitted_answers = []
+    elif isinstance(submitted_answers, dict):
+        # convert dict values to a list
+        submitted_answers = [v.get("letter") for v in submitted_answers.values() if "letter" in v]
+    elif not isinstance(submitted_answers, list):
+        # fallback to empty list if format is unknown
+        submitted_answers = []
+
+    # Score from Colab
     score = result_data.get("score", 0)
 
     # Correct answers from AnswerKey
@@ -55,7 +67,7 @@ def process_uploaded_answer(user_id, exam_id, image_path):
     correct_list = [v["letter"] for v in correct_answers.values()] if isinstance(correct_answers, dict) else list(correct_answers)
 
     # Calculate elapsed time
-    elapsed = round(time.time() - start_time, 2)  # seconds, rounded to 2 decimals
+    elapsed = round(time.time() - start_time, 2)
 
     # Save or update result
     Result.objects.update_or_create(
@@ -71,7 +83,7 @@ def process_uploaded_answer(user_id, exam_id, image_path):
             "score": score,
             "is_submitted": True,
             "total_items": len(correct_list),
-            "elapsed_time": str(elapsed)  # save as string in seconds
+            "elapsed_time": str(elapsed)
         }
     )
 
