@@ -208,22 +208,43 @@
     document.getElementById('upload-form').addEventListener('submit', function(event) {
       event.preventDefault();
       let formData = new FormData(this);
-
+      const feedback = document.getElementById('feedback');
+      const uploadForm = document.getElementById('upload-form');
+      const examId = document.getElementById('exam-id').value;
+  
+      feedback.innerText = "Uploading and processing...";
+  
       fetch('', { method: 'POST', body: formData })
-        .then(response => response.json())
-        .then(data => {
-          if (data.warning) {
-            document.getElementById('feedback').innerText = data.warning;
-          } else {
-            document.getElementById('feedback').innerText = `Your Score: ${data.score}`;
-            document.getElementById('upload-form').style.display = 'none';
-          }
-        })
-        .catch(error => {
-          console.error('Error:', error);
-          document.getElementById('feedback').innerText = 'Error: Failed to submit answer. Please try again later.';
-        });
-    });
+          .then(response => response.json())
+          .then(data => {
+              if (data.warning) {
+                  feedback.innerText = data.warning;
+              } else if (data.message) {
+                  feedback.innerText = data.message;
+                  uploadForm.style.display = 'none';
+  
+                  // Start polling for score
+                  const pollInterval = setInterval(() => {
+                      fetch(`/check_score?exam_id=${examId}`)
+                          .then(res => res.json())
+                          .then(scoreData => {
+                              if (scoreData.score !== null) {
+                                  feedback.innerText = `Your Score: ${scoreData.score}`;
+                                  clearInterval(pollInterval);
+                              }
+                          })
+                          .catch(err => {
+                              console.error('Polling error:', err);
+                          });
+                  }, 3000); // Poll every 3 seconds
+              }
+          })
+          .catch(error => {
+              console.error('Error:', error);
+              feedback.innerText = 'Error: Failed to submit answer. Please try again later.';
+          });
+  });
+
   </script>
 </body>
 </html>
