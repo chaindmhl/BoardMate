@@ -24,20 +24,21 @@ def process_uploaded_answer(user_id, exam_id, image_path, *args, **kwargs):
     with open(image_path, "rb") as f:
         files = {"image": f}
         data = {"exam_id": exam_id, "user_id": user_id, "correct_answers": correct_answers}
+        try:
+            response = requests.post(COLAB_URL, files=files, data=data, timeout=60)  # increase timeout
+            response.raise_for_status()
+        except requests.RequestException as e:
+            # Try to get the response content from Colab
+            if e.response is not None:
+                try:
+                    error_content = e.response.json()
+                except Exception:
+                    error_content = e.response.text
+                print(f"[ERROR] Failed to send image to Colab: {str(e)} | Response: {error_content}")
+            else:
+                print(f"[ERROR] Failed to send image to Colab: {str(e)} | No response received")
+            return {"error": f"Failed to process image: {str(e)}"}
 
-        # --- Retry with timeout ---
-        for attempt in range(3):
-            try:
-                response = requests.post(COLAB_URL, files=files, data=data, timeout=120)
-                response.raise_for_status()
-                break
-            except requests.RequestException as e:
-                print(f"[ERROR] Attempt {attempt+1} failed: {e}")
-                if attempt < 2:
-                    print("Retrying in 5 seconds...")
-                    time.sleep(5)
-                else:
-                    return {"error": f"Failed to process image after 3 attempts: {e}"}
 
     result_data = response.json()
     elapsed = round(time.time() - start_time, 2)
