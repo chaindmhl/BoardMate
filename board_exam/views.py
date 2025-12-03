@@ -1227,15 +1227,15 @@ from board_exam.tasks import process_uploaded_answer
 def check_score(request):
     user = request.user
     exam_id = request.GET.get("exam_id")
-
     try:
         result = Result.objects.get(user=user, exam_id=exam_id)
         if result.is_submitted:
-            return JsonResponse({"score": result.score})
+            return JsonResponse({"score": result.score, "elapsed_time": result.elapsed_time})
         else:
-            return JsonResponse({"score": None})  # Task not finished yet
+            return JsonResponse({"score": None, "elapsed_time": None})
     except Result.DoesNotExist:
-        return JsonResponse({"score": None})
+        return JsonResponse({"score": None, "elapsed_time": None})
+
 
 def upload_answer(request):
     if request.method == "POST" and request.FILES.get("image"):
