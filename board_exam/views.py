@@ -1223,40 +1223,28 @@ def download_exam_results(request):
 
 from django_q.tasks import async_task
 
-
 def upload_answer(request):
-    if request.method == "POST" and request.FILES.get("image"):
-        uploaded_image = request.FILES["image"]
-        exam_id = request.POST.get("exam_id")
+    if request.method == 'POST' and request.FILES.get('image'):
+        uploaded_image = request.FILES['image']
+        exam_id = request.POST.get('exam_id')
         user_id = request.user.id
+        answer_key = get_object_or_404(AnswerKey, set_id=exam_id)
 
-        # Original filename from user's computer
-        original_filename = uploaded_image.name
-        print("Uploaded file from user:", original_filename)
+        correct_answers = {str(k): v['letter'] for k, v in answer_key.answer_key.items()}
 
-        # Create uploads folder
-        upload_dir = os.path.join(settings.MEDIA_ROOT, "uploads")
-        os.makedirs(upload_dir, exist_ok=True)
-
-        # Save with unique filename to avoid collisions
-        filename = f"{int(time.time())}_{uuid.uuid4().hex}_{original_filename}"
-        file_path = os.path.join(upload_dir, filename)
-        with open(file_path, "wb") as f:
+        # Save file temporarily
+        file_path = f'/tmp/{uploaded_image.name}'
+        with open(file_path, 'wb+') as f:
             for chunk in uploaded_image.chunks():
                 f.write(chunk)
 
-        # Relative path to pass to task
-        relative_path = os.path.join("uploads", filename)
+        # Enqueue Django-Q task
+        async_task('board_exam.tasks.process_uploaded_answer',
+                   file_path, exam_id, user_id, correct_answers)
 
-        # Queue background task
-        async_task("board_exam.tasks.process_uploaded_answer", relative_path, exam_id, user_id)
+        return JsonResponse({'status': 'Processing started'})
+    return render(request, 'upload_answer.html')
 
-        return JsonResponse({
-            "status": "processing",
-            "message": f"Your answer '{original_filename}' is being processed."
-        })
-
-    return render(request, "upload_answer.html")
 
 def answer_sheet_view(request):
     if request.method == 'POST':
