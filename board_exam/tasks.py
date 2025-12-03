@@ -4,61 +4,53 @@ from django.conf import settings
 from django.shortcuts import get_object_or_404
 from board_exam.models import Result, Student, AnswerKey
 
-def process_uploaded_answer(*args, **kwargs):
+# Send request to Colab for processing
+COLAB_URL = settings.COLAB_URL + "/process_answer"  # Make sure COLAB_URL is set in settings.py
+ 
+def process_uploaded_answer(user_id, exam_id, image_path):
     """
-    Background task to process an uploaded answer image via Colab.
-    Accepts extra args sent by Django-Q.
+    Sends the uploaded answer image to Colab for processing,
+    then stores the result in the database.
     """
-    user_id = args[0]
-    exam_id = args[1]
-    image_path = args[2]
-
-    # Fetch student and answer key
+    # Fetch student
     student = get_object_or_404(Student, user_id=user_id)
+
+    # Fetch answer key
     answer_key = get_object_or_404(AnswerKey, set_id=exam_id)
 
-    # Send request to Colab for processing
-    colab_url = settings.COLAB_URL + "/process_answer"  # Make sure COLAB_URL is set in settings.py
-    files = {"image": open(image_path, "rb")}
-    data = {"user_id": user_id, "exam_id": exam_id}
-    
-    try:
-        response = requests.post(colab_url, files=files, data=data)
-        response.raise_for_status()
-    except Exception as e:
-        return {"error": f"Colab request failed: {str(e)}"}
+    # Send image to Colab
+    with open(image_path, "rb") as f:
+        files = {"image": f}
+        data = {"exam_id": exam_id, "user_id": user_id}
+        try:
+            response = requests.post(COLAB_URL, files=files, data=data)
+            response.raise_for_status()
+        except requests.RequestException as e:
+            return {"error": f"Failed to process image: {str(e)}"}
 
     result_data = response.json()
-    
-    # Extract results from Colab response
     submitted_answers = result_data.get("submitted_answers", [])
     score = result_data.get("score", 0)
-    original_detections = result_data.get("original_detections", [])
-    cropped_detections = result_data.get("cropped_detections", [])
 
-    # Correct answers are stored as a list in AnswerKey
+    # Correct answers from AnswerKey
     correct_answers = answer_key.answer_key
-    total_items = len(correct_answers)
+    correct_list = [v["letter"] for v in correct_answers.values()] if isinstance(correct_answers, dict) else list(correct_answers)
 
-    # Save or update Result in database
+    # Save or update result
     Result.objects.update_or_create(
         user_id=user_id,
         exam_id=exam_id,
         defaults={
             "student_id": student.student_id,
             "course": student.course,
-            "student_name": f"{student.last_name}, {student.first_name} {student.middle_name}",
+            "student_name": f"{student.last_name}, {student.first_name} {student.middle_name or ''}".strip(),
             "subject": answer_key.subject,
             "answer": submitted_answers,
-            "correct_answer": correct_answers,
+            "correct_answer": correct_list,
             "score": score,
             "is_submitted": True,
-            "total_items": total_items
+            "total_items": len(correct_list)
         }
     )
 
-    return {
-        "score": score,
-        "original_detections": original_detections,
-        "cropped_detections": cropped_detections
-    }
+    return {"score": score, "submitted_answers": submitted_answers}
