@@ -14,6 +14,8 @@ LOGIN_URL = '/login/'            # URL where users can log in
 LOGIN_REDIRECT_URL = '/'         # URL to redirect after login
 LOGOUT_REDIRECT_URL = '/'        # URL after logout
 
+# URL of your Colab Flask server (ngrok public URL)
+COLAB_URL = "https://kasi-releasible-conscionably.ngrok-free.dev"
 
 
 # Quick-start development settings - unsuitable for production
