@@ -61,13 +61,15 @@ def process_uploaded_answer(user_id, exam_id, image_path):
             "course": student.course,
             "student_name": f"{student.last_name}, {student.first_name} {student.middle_name or ''}".strip(),
             "subject": answer_key.subject,
-            "answer": submitted_answers,
+            "answer": submitted_answers,   # this should be the real answers
             "correct_answer": correct_list,
             "score": score,
             "is_submitted": True,
-            "total_items": len(correct_list)
+            "total_items": len(correct_list),
+            "elapsed_time": elapsed
         }
     )
+
 
     print(f"[TASK] Finished processing user_id={user_id} exam_id={exam_id}, score={score}")
     return {"score": score, "submitted_answers": submitted_answers}
