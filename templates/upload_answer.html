@@ -225,7 +225,7 @@
   
                   // Start polling for score
                   const pollInterval = setInterval(() => {
-                      fetch(`/check_score?exam_id=${examId}`)
+                      fetch(`/check_score?exam_id=${examId}`, { credentials: 'same-origin' })
                           .then(res => res.json())
                           .then(scoreData => {
                               if (scoreData.score !== null) {
