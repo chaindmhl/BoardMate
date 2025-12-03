@@ -1224,51 +1224,52 @@ def download_exam_results(request):
 from django_q.tasks import async_task
 from board_exam.tasks import process_uploaded_answer
 
-def check_score(request):
-    user = request.user
-    exam_id = request.GET.get("exam_id")
-    try:
-        result = Result.objects.get(user=user, exam_id=exam_id)
-        if result.is_submitted:
-            return JsonResponse({"score": result.score, "elapsed_time": result.elapsed_time})
-        else:
-            return JsonResponse({"score": None, "elapsed_time": None})
-    except Result.DoesNotExist:
-        return JsonResponse({"score": None, "elapsed_time": None})
+# ---------- Helper function ----------
+def image_to_mask(image):
+    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    _, mask = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
+    kernel = np.ones((2,2), np.uint8)
+    mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel)
+    return mask
 
-
+# ---------- View ----------
 def upload_answer(request):
-    if request.method == "POST" and request.FILES.get("image"):
-        uploaded_image = request.FILES["image"]
-        exam_id = request.POST.get("exam_id")
+    if request.method == 'POST' and request.FILES.get('image'):
+        uploaded_image = request.FILES['image']
+        exam_id = request.POST.get('exam_id')
         user = request.user
 
-        # Ensure exam_id is string
-        exam_id = str(exam_id)
+        # Check for existing submission
+        if Result.objects.filter(user=user, exam_id=exam_id).exists():
+            return JsonResponse({'warning': 'An answer is already uploaded for this user and exam ID'})
 
-        # Save uploaded image to a temporary path
-        tmp_dir = os.path.join("media", "tmp_uploads")
-        os.makedirs(tmp_dir, exist_ok=True)
-        tmp_path = os.path.join(tmp_dir, f"{user.id}_{exam_id}.jpg")
-        with open(tmp_path, "wb") as f:
+        # Save temporary uploaded image
+        directory = os.path.join(settings.MEDIA_ROOT, "tmp_uploads")
+        os.makedirs(directory, exist_ok=True)
+        temp_filename = f"{user.id}_{exam_id}_{uuid.uuid4().hex}.jpg"
+        temp_path = os.path.join(directory, temp_filename)
+
+        with open(temp_path, "wb") as f:
             for chunk in uploaded_image.chunks():
                 f.write(chunk)
 
-        # Check if a result already exists
-        if Result.objects.filter(user=user, exam_id=exam_id).exists():
-            return JsonResponse({"warning": "An answer is already uploaded for this exam."})
+        # Optional: save a mask copy (not strictly needed if Colab expects raw image)
+        # image_np = np.frombuffer(uploaded_image.read(), np.uint8)
+        # image_cv = cv2.imdecode(image_np, cv2.IMREAD_COLOR)
+        # mask = image_to_mask(image_cv)
+        # cv2.imwrite(os.path.join(directory, f"mask_{temp_filename}"), mask)
 
-        # Enqueue background task with positional arguments
+        # Run Django Q async task
         async_task(
-            "board_exam.tasks.process_uploaded_answer",
-            user.id,      # must be integer
-            exam_id,      # string
-            tmp_path      # image path
+            'board_exam.tasks.process_uploaded_answer',
+            user.id,
+            exam_id,
+            temp_path
         )
 
-        return JsonResponse({"message": "Answer uploaded successfully. Processing in background."})
+        return JsonResponse({'success': 'Answer uploaded successfully. Processing will happen in the background.'})
 
-    return render(request, "upload_answer.html")
+    return render(request, 'upload_answer.html')
 
 
 def answer_sheet_view(request):
