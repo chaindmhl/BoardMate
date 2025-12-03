@@ -1,4 +1,6 @@
+# tasks.py
 import os
+import time
 import requests
 from django.conf import settings
 from django.shortcuts import get_object_or_404
@@ -11,7 +13,7 @@ def process_uploaded_answer(user_id, exam_id, image_path):
     Sends the uploaded answer image to Colab for processing,
     then stores the result in the database.
     """
-    # Log received arguments for debugging
+    start_time = time.time()
     print("[TASK] Started process_uploaded_answer")
     print(f"[TASK] user_id={user_id}, exam_id={exam_id}, image_path={image_path}")
 
@@ -52,6 +54,9 @@ def process_uploaded_answer(user_id, exam_id, image_path):
     correct_answers = answer_key.answer_key
     correct_list = [v["letter"] for v in correct_answers.values()] if isinstance(correct_answers, dict) else list(correct_answers)
 
+    # Calculate elapsed time
+    elapsed = round(time.time() - start_time, 2)  # seconds, rounded to 2 decimals
+
     # Save or update result
     Result.objects.update_or_create(
         user_id=user_id,
@@ -61,15 +66,14 @@ def process_uploaded_answer(user_id, exam_id, image_path):
             "course": student.course,
             "student_name": f"{student.last_name}, {student.first_name} {student.middle_name or ''}".strip(),
             "subject": answer_key.subject,
-            "answer": submitted_answers,   # this should be the real answers
+            "answer": submitted_answers,
             "correct_answer": correct_list,
             "score": score,
             "is_submitted": True,
             "total_items": len(correct_list),
-            "elapsed_time": elapsed
+            "elapsed_time": str(elapsed)  # save as string in seconds
         }
     )
 
-
-    print(f"[TASK] Finished processing user_id={user_id} exam_id={exam_id}, score={score}")
-    return {"score": score, "submitted_answers": submitted_answers}
+    print(f"[TASK] Finished processing user_id={user_id} exam_id={exam_id}, score={score}, elapsed_time={elapsed}s")
+    return {"score": score, "submitted_answers": submitted_answers, "elapsed_time": elapsed}
