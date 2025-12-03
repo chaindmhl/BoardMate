@@ -1225,12 +1225,17 @@ from django_q.tasks import async_task
 from board_exam.tasks import process_uploaded_answer
 
 # ---------- Helper function ----------
-def image_to_mask(image):
-    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-    _, mask = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
-    kernel = np.ones((2,2), np.uint8)
-    mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel)
-    return mask
+def check_score(request): 
+    user = request.user 
+    exam_id = request.GET.get("exam_id") 
+    try: 
+        result = Result.objects.get(user=user, exam_id=exam_id) 
+        if result.is_submitted: 
+            return JsonResponse({"score": result.score, "elapsed_time": result.elapsed_time}) 
+        else: return JsonResponse({"score": None, "elapsed_time": None}) 
+            
+    except Result.DoesNotExist: 
+        return JsonResponse({"score": None, "elapsed_time": None})
 
 # ---------- View ----------
 def upload_answer(request):
