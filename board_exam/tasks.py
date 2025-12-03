@@ -8,7 +8,7 @@ from board_exam.models import Result, Student, AnswerKey
 
 COLAB_URL = settings.COLAB_URL + "/process_answer"
 
-def process_uploaded_answer(user_id, exam_id, image_path):
+def process_uploaded_answer(user_id, exam_id, image_path, *args, **kwargs):
     """
     Sends the uploaded answer image to Colab for processing,
     then stores the result in the database.
