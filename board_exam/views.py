@@ -1224,57 +1224,48 @@ def download_exam_results(request):
 from django_q.tasks import async_task
 from board_exam.tasks import process_uploaded_answer
 
-# ---------- Helper function ----------
-def check_score(request): 
-    user = request.user 
-    exam_id = request.GET.get("exam_id") 
-    try: 
-        result = Result.objects.get(user=user, exam_id=exam_id) 
-        if result.is_submitted: 
-            return JsonResponse({"score": result.score, "elapsed_time": result.elapsed_time}) 
-        else: return JsonResponse({"score": None, "elapsed_time": None}) 
-            
-    except Result.DoesNotExist: 
+def check_score(request):
+    user = request.user
+    exam_id = request.GET.get("exam_id")
+    try:
+        result = Result.objects.get(user=user, exam_id=exam_id)
+        if result.is_submitted:
+            return JsonResponse({"score": result.score, "elapsed_time": result.elapsed_time})
+        else:
+            return JsonResponse({"score": None, "elapsed_time": None})
+    except Result.DoesNotExist:
         return JsonResponse({"score": None, "elapsed_time": None})
 
-# ---------- View ----------
+
 def upload_answer(request):
-    if request.method == 'POST' and request.FILES.get('image'):
-        uploaded_image = request.FILES['image']
-        exam_id = request.POST.get('exam_id')
+    if request.method == "POST" and request.FILES.get("image"):
+        uploaded_image = request.FILES["image"]
+        exam_id = request.POST.get("exam_id")
         user = request.user
 
-        # Check for existing submission
+        # Basic validation
+        if not exam_id:
+            return JsonResponse({"error": "exam_id required"}, status=400)
+
+        # ensure no duplicate submission
         if Result.objects.filter(user=user, exam_id=exam_id).exists():
-            return JsonResponse({'warning': 'An answer is already uploaded for this user and exam ID'})
+            return JsonResponse({"warning": "An answer is already uploaded for this exam."})
 
-        # Save temporary uploaded image
-        directory = os.path.join(settings.MEDIA_ROOT, "tmp_uploads")
-        os.makedirs(directory, exist_ok=True)
-        temp_filename = f"{user.id}_{exam_id}_{uuid.uuid4().hex}.jpg"
-        temp_path = os.path.join(directory, temp_filename)
+        tmp_dir = os.path.join(settings.MEDIA_ROOT, "tmp_uploads")
+        os.makedirs(tmp_dir, exist_ok=True)
+        tmp_path = os.path.join(tmp_dir, f"{user.id}_{exam_id}_{uuid.uuid4().hex}.jpg")
 
-        with open(temp_path, "wb") as f:
+        with open(tmp_path, "wb") as f:
             for chunk in uploaded_image.chunks():
                 f.write(chunk)
 
-        # Optional: save a mask copy (not strictly needed if Colab expects raw image)
-        # image_np = np.frombuffer(uploaded_image.read(), np.uint8)
-        # image_cv = cv2.imdecode(image_np, cv2.IMREAD_COLOR)
-        # mask = image_to_mask(image_cv)
-        # cv2.imwrite(os.path.join(directory, f"mask_{temp_filename}"), mask)
+        # enqueue task
+        async_task("board_exam.tasks.process_uploaded_answer", user.id, str(exam_id), tmp_path)
 
-        # Run Django Q async task
-        async_task(
-            'board_exam.tasks.process_uploaded_answer',
-            user.id,
-            exam_id,
-            temp_path
-        )
+        return JsonResponse({"message": "Answer uploaded successfully. Processing in background."})
 
-        return JsonResponse({'success': 'Answer uploaded successfully. Processing will happen in the background.'})
-
-    return render(request, 'upload_answer.html')
+    # GET -> render template
+    return render(request, "upload_answer.html")
 
 
 def answer_sheet_view(request):
