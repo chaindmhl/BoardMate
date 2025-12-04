@@ -10,7 +10,7 @@ from django.shortcuts import get_object_or_404
 
 from board_exam.models import Result, Student, AnswerKey
 
-# must be like: https://xxxxx.ngrok-free.app/process_answer
+
 COLAB_URL = settings.COLAB_URL
 
 
