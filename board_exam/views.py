@@ -50,7 +50,6 @@ from dotenv import load_dotenv
 logo_path = os.path.join(settings.BASE_DIR, 'static', 'boardmate1.png')  # full path
 
 
-
 ####################### FOR SIGNING UP ##############################
 
 @csrf_protect
