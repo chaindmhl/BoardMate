@@ -238,6 +238,12 @@
                           });
                   }, 3000); // Poll every 3 seconds
               }
+              if (data.annotated_image) {
+                  const img = document.createElement('img');
+                  img.src = data.annotated_image;
+                  img.style.maxWidth = "100%";
+                  document.getElementById('feedback').appendChild(img);
+              }
           })
           .catch(error => {
               console.error('Error:', error);
