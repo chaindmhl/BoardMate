@@ -13,6 +13,7 @@ from board_exam.models import Result, Student, AnswerKey
 # must be like: https://xxxxx.ngrok-free.app/process_answer
 COLAB_URL = settings.COLAB_URL
 
+
 def process_uploaded_answer(user_id, exam_id, image_path, *args, **kwargs):
     start_time = time.time()
     print("[TASK] Started process_uploaded_answer")
