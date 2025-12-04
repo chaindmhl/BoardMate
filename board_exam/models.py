@@ -205,6 +205,8 @@ class Result(models.Model):
     total_items = models.IntegerField(default=0)
     is_submitted = models.BooleanField(default=False)
     elapsed_time = models.CharField(max_length=50, null=True, blank=True)
+    annotated_image = models.ImageField(upload_to="annotated/", blank=True, null=True)
+
     
 User = get_user_model()
 
